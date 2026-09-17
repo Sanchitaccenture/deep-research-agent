@@ -6,10 +6,15 @@
 [![React 18](https://img.shields.io/badge/react-18-61dafb.svg)](https://react.dev/)
 [![tests: 55 passing](https://img.shields.io/badge/tests-55%20passing-brightgreen.svg)](tests/)
 
-> 🎥 **[Watch the 90-second demo →](https://YOUR_LOOM_URL)** &nbsp;·&nbsp;
-> 🌐 **[Try it live →](https://YOUR_VERCEL_URL)** &nbsp;·&nbsp;
-> 🚀 **[Deploy guide →](DEPLOY.md)** &nbsp;·&nbsp;
-> 📐 **[Architecture →](ARCHITECTURE.md)**
+> ### 🌐 **[Try it live → deep-research-agent-henna.vercel.app](https://deep-research-agent-henna.vercel.app)**
+>
+> 📊 **[API docs (Swagger)](https://deep-research-agent-production-6f9a.up.railway.app/docs)** &nbsp;·&nbsp;
+> 📐 **[Architecture](ARCHITECTURE.md)** &nbsp;·&nbsp;
+> 🚀 **[Deploy guide](DEPLOY.md)** &nbsp;·&nbsp;
+> 🧪 **[Tests](tests/)** &nbsp;·&nbsp;
+> 📈 **[Evals](evals/)**
+
+**Deployed on:** Railway (backend) + Vercel (frontend) · Docker · CI on GitHub Actions
 
 
 
