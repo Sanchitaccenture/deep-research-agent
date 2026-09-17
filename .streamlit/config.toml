@@ -1,0 +1,12 @@
+[server]
+# Streamlit's default watcher walks every installed package to detect file
+# changes. transformers has 100+ image_processing_* modules that fail to
+# import unless torchvision is installed — noisy but harmless.
+# "poll" watches only the app file itself; "none" disables reloads.
+fileWatcherType = "poll"
+
+[browser]
+gatherUsageStats = false
+
+[logger]
+level = "warning"

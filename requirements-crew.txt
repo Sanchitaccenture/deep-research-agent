@@ -1,0 +1,4 @@
+# Optional: CrewAI multi-agent mode.
+# Requires Python 3.10–3.13 (as of 2026-09, CrewAI is not on 3.14 yet).
+# Install AFTER requirements.txt: `pip install -r requirements-crew.txt`.
+crewai>=0.70.0

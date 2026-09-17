@@ -1,0 +1,43 @@
+# --- Python ---
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Secrets & local config ---
+.env
+.env.*
+!.env.example
+
+# --- Runtime data (sessions, uploads, embeddings, telemetry) ---
+data/
+!data/.gitkeep
+
+# --- Node / Vite ---
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/*.local
+
+# --- Evals runs ---
+evals/report_*.json
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# --- Streamlit (legacy) ---
+.streamlit/secrets.toml

@@ -1,0 +1,84 @@
+# Eval dataset for the Deep Research Agent.
+#
+# Each item is a research question plus what a good answer should cover
+# (`expected_topics`) and what it must not do (`must_not`). The judge LLM
+# uses these to score. Keep questions researchable (not trivia; not
+# opinion) and short-lived facts that can be verified from the web.
+#
+# Fields:
+#   id             — stable slug
+#   question       — the prompt sent to the agent
+#   template       — which template to run (default | executive | ...)
+#   expected_topics — 3-6 topics a good report must cover
+#   must_not       — behaviours that should count as failures
+#   min_sources    — minimum number of sources to be considered credible
+#   category       — grouping for report aggregates
+
+- id: rag-basics
+  question: What is retrieval-augmented generation and why does it matter for enterprise AI?
+  template: default
+  expected_topics:
+    - definition of RAG (retrieval + generation)
+    - vector databases / embeddings
+    - reducing hallucinations
+    - enterprise data / knowledge base grounding
+    - one concrete use case or vendor
+  must_not:
+    - invent statistics without citations
+    - conflate RAG with fine-tuning
+  min_sources: 3
+  category: concepts
+
+- id: langgraph-vs-crewai
+  question: "Compare LangGraph and CrewAI: strengths, weaknesses, and when to use each."
+  template: pros_cons
+  expected_topics:
+    - state machine / graph model of LangGraph
+    - role-based agents in CrewAI
+    - at least one weakness of each
+    - a recommendation of when to choose which
+  must_not:
+    - claim one strictly dominates the other
+  min_sources: 3
+  category: comparison
+
+- id: ev-battery-risks
+  question: What are the main risks facing the EV battery industry in 2026?
+  template: executive
+  expected_topics:
+    - lithium / raw material supply
+    - price competition / oversupply
+    - regulatory or geopolitical risk
+    - fire / safety incidents
+    - technology substitution (solid-state, sodium-ion)
+  must_not:
+    - fabricate specific incident dates
+  min_sources: 4
+  category: industry
+
+- id: mcp-security
+  question: What are the top security risks of MCP (Model Context Protocol) servers in production?
+  template: deep_dive
+  expected_topics:
+    - prompt injection via tool arguments
+    - excessive permissions / capability scoping
+    - credential leakage through logs
+    - insecure transport / auth
+    - supply-chain / server registry risk
+  must_not:
+    - conflate MCP with unrelated protocols
+  min_sources: 3
+  category: security
+
+- id: open-source-llms-2026
+  question: Summarize the state of open-source LLMs in 2026 including licensing and market share.
+  template: deep_dive
+  expected_topics:
+    - specific open-source model families
+    - Apache / MIT vs bespoke licenses
+    - open vs open-weight distinction
+    - at least one adoption or market datapoint
+  must_not:
+    - report vendor share numbers without citations
+  min_sources: 4
+  category: industry

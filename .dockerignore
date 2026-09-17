@@ -1,0 +1,46 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data — Railway Volume will provide this at runtime
+data/
+
+# Node / Vite (frontend lives on Vercel, not in the backend image)
+frontend/node_modules/
+frontend/dist/
+
+# Tests + evals reports (evals code is copied; historical reports aren't)
+tests/
+evals/report_*.json
+
+# Legacy
+legacy/
+.streamlit/
+
+# Docs — copied selectively in the Dockerfile
+docs/
+*.md
+!README.md
+!ARCHITECTURE.md
+!LICENSE
+
+# Git / IDE
+.git/
+.github/
+.vscode/
+.idea/
+*.swp
+.DS_Store
