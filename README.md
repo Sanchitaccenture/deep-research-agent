@@ -1,290 +1,380 @@
+<div align="center">
+
 # 🔎 Deep Research Agent
 
+### An autonomous AI research assistant that plans, searches, critiques, and writes cited reports — all streamed live to a modern React UI.
+
+<br>
+
 [![CI](https://github.com/Sanchitaccenture/deep-research-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Sanchitaccenture/deep-research-agent/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.12](https://img.shields.io/badge/python-3.12+-3776ab.svg)](https://www.python.org/)
-[![React 18](https://img.shields.io/badge/react-18-61dafb.svg)](https://react.dev/)
-[![tests: 55 passing](https://img.shields.io/badge/tests-55%20passing-brightgreen.svg)](tests/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-4c1?style=flat)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776ab?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![React 18](https://img.shields.io/badge/react-18-61dafb?style=flat&logo=react&logoColor=white)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178c6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![tests: 55 passing](https://img.shields.io/badge/tests-55%20passing-brightgreen?style=flat)](tests/)
 
-> ### 🌐 **[Try it live → deep-research-agent-henna.vercel.app](https://deep-research-agent-henna.vercel.app)**
->
-> 📊 **[API docs (Swagger)](https://deep-research-agent-production-6f9a.up.railway.app/docs)** &nbsp;·&nbsp;
-> 📐 **[Architecture](ARCHITECTURE.md)** &nbsp;·&nbsp;
-> 🚀 **[Deploy guide](DEPLOY.md)** &nbsp;·&nbsp;
-> 🧪 **[Tests](tests/)** &nbsp;·&nbsp;
-> 📈 **[Evals](evals/)**
+<br>
 
-**Deployed on:** Railway (backend) + Vercel (frontend) · Docker · CI on GitHub Actions
+### 🌐 **[Try it live — deep-research-agent-henna.vercel.app →](https://deep-research-agent-henna.vercel.app)**
 
+**[Docs](https://deep-research-agent-production-6f9a.up.railway.app/docs)** &nbsp;·&nbsp;
+**[Architecture](ARCHITECTURE.md)** &nbsp;·&nbsp;
+**[Deploy Guide](DEPLOY.md)** &nbsp;·&nbsp;
+**[Tests](tests/)** &nbsp;·&nbsp;
+**[Evals](evals/)**
 
+<br>
 
-An autonomous AI research assistant that behaves like a human analyst:
-it **plans** sub-questions, **searches** the web AND your uploaded documents,
-**critiques** its own coverage, and **synthesizes** a structured, source-cited
-report — all streamed live to a modern React UI.
+<sub>Deployed on Railway (backend) + Vercel (frontend) · Docker · CI on GitHub Actions</sub>
 
-Built with **LangGraph · CrewAI · LangChain · ChromaDB (RAG) · Groq · Tavily
-· FastAPI · React 18 · TypeScript · TailwindCSS · Vite**.
+</div>
 
 ---
 
-## What's inside
+## ✨ Why this exists
 
-Two independent research pipelines you can toggle between per query:
+Most "AI research" tools are thin wrappers around a single LLM call. This project shows what happens when you go further:
 
-### 1. LangGraph pipeline (deterministic loop)
+- an **agentic state machine** that plans, searches, self-critiques and loops until coverage is sufficient
+- **grounded retrieval** over both the live web and your own uploaded documents
+- **real-time streaming synthesis** — the report writes itself token-by-token with a caret
+- **production-grade engineering** — full test suite, LLM-as-judge evals, per-run cost tracking, structured telemetry, graceful degradation on rate limits
 
-```
-question ─▶ PLAN ─▶ SEARCH (web + RAG) ─▶ ASSESS ──(gaps left)──▶ SEARCH  (loop)
-                                             │
-                                             └──(satisfied)──▶ SYNTHESIZE ─▶ cited report
-```
-
-- **Plan** — decompose the question into focused sub-questions.
-- **Search** — Tavily web search + semantic search over your uploaded documents.
-- **Assess** — judge coverage, name gaps, generate new follow-up queries.
-- **Synthesize** — write a structured, numbered-citation report.
-
-A round budget (`MAX_ROUNDS`) guarantees termination.
-
-### 2. CrewAI pipeline (specialist multi-agent crew)
-
-```
-Planner ─▶ Web Researcher ─▶ Doc Analyst ─▶ Critic ─▶ Writer
-```
-
-Five specialist agents, each with its own role, backstory, and tool set,
-collaborating on a shared research task. Use it when you want visible
-role-play + evidence critique.
+It behaves like a junior analyst you can ask any question at 2am.
 
 ---
 
-> **📐 Architecture, design decisions & trade-offs → [ARCHITECTURE.md](ARCHITECTURE.md)**
-> **🧪 Tests → `pytest`**   |   **📊 Evals → [evals/](evals/)**
+## 🖼️ In action
 
-## Features
+The dashboard, ⌘K command palette, streaming synthesis, mind map, and follow-up chat:
 
-### AI pipelines
-- 🧠 **Two research modes** — LangGraph loop or CrewAI crew, toggled per query
-- 📝 **Five report templates** — Standard, Executive one-pager, Deep Dive with
-  tables, Pros / Cons + Verdict, and a chronological Timeline
-- 📚 **RAG over your own docs** — upload PDF / TXT / MD, ChromaDB + local
-  sentence-transformer embeddings, results merged into the same report
-- ✍️ **Token-by-token streaming synthesis** — the report writes itself in
-  front of you with a live caret, no more blank-screen waits
-- 🕸️ **Auto-generated mind maps** — every report ships with a Mermaid mindmap
-  synthesised from the findings
-- 💬 **Follow-up chat** — after the run, chat with the report; every answer is
-  streamed token-by-token and grounded in the same numbered sources
-- 💡 **Suggested next questions** — the agent proposes 3 concrete follow-ups
-  so you can drill deeper with a click
-- 🏷️ **Auto-tagging** — the LLM proposes 3 topical tags at the end of each
-  run and applies them if the session has none, so search / filter is free
+**[▶ Open the live demo](https://deep-research-agent-henna.vercel.app)** &nbsp;·&nbsp; Try the sample questions on the home screen for a quick feel.
 
-### Productivity & organisation
-- ⌨️ **Command palette (⌘K)** — jump to any session, start a new run with a
-  specific template, open dashboard or settings, all via fuzzy search
-- 🎙️ **Voice input** — click the mic on the ask box, dashboard, chat, or
-  refine bar to dictate your question (Web Speech API; Chrome / Edge)
-- 🏠 **Home dashboard** — total runs, sources gathered, chat turns, activity
-  chart for the last 14 days, mode/template breakdowns, popular tags, and
-  recent + bookmarked sections
-- 🔍 **Sidebar search & filters** — instant filter across your history by
-  keyword, bookmark, presence of notes, or mode
-- ⭐ **Bookmarks + #tags + notes** — star important runs, add hashtags for
-  organisation, and keep autosaving personal notes on each session
-- 🧭 **Related sessions widget** — after each run, see past research on
-  similar questions (keyword + tag Jaccard similarity)
-- ⏱️ **Keyboard shortcuts** — ⌘K / ⌘N / ⌘H / ⌘, / ⌘/ / ⌘-Enter / Esc
-
-### Engineering rigour
-- 🧪 **Full pytest suite** — mocked LLM + Tavily, isolated per-test data
-  dirs; covers session store CRUD, every LangGraph node, and every FastAPI
-  route via `TestClient`. Runs offline in <5s
-- 📈 **LLM-as-judge evals** — `evals/` harness runs a fixed set of research
-  questions against the real agent and scores each report on 5 rubrics
-  (coverage / citations / groundedness / clarity / honesty)
-- 📟 **Structured telemetry** — every LLM call is captured via a LangChain
-  `BaseCallbackHandler` that reads `usage_metadata`, prices it against a
-  per-model table, and aggregates per `run_id`. JSONL logs to
-  `data/telemetry/YYYY-MM-DD.jsonl` for grep-ability
-- 💰 **Real token & USD cost tracking** — surfaced in the metrics tile
-  alongside duration and source counts, not just chars/4 estimation
-
-### Operations & UX
-- 📊 **Run metrics** — duration, sub-questions, rounds, web vs. doc sources,
-  report size, reading time, **real token counts, and per-run USD cost**
-- 🔴 **Live SSE streaming** — every plan / search / assess / enrich step
-  streams in real time
-- 🗂️ **Persistent sessions with shareable links** — every run and its chat
-  thread are saved; `#/session/<id>` deep-links back to it
-- 📎 **Citations that click** — inline `[n]` markers become links to the
-  source, colour-coded by web vs. document; documents show a `D` prefix
-- ⬇️ **Export** — copy, download as `.md` (with the mermaid diagram embedded),
-  or share the deep-link
-- 🎨 **Modern UI** — React 18 + TypeScript + Tailwind, glass surfaces, dark
-  theme, animated transitions
+> Screenshots and a 90-second Loom walkthrough will be added here in the next commit.
 
 ---
 
-## Setup
+## 🧠 How it works
 
-### 1. Get two free API keys
+Two graphs cooperate under the hood:
 
-- **Groq** — https://console.groq.com/keys
-- **Tavily** — https://app.tavily.com (free tier ~1000 searches/month)
+```mermaid
+flowchart LR
+    START([question]) --> PLAN[plan<br/>LLM: decompose]
+    PLAN --> SEARCH[search<br/>Tavily + RAG]
+    SEARCH --> ASSESS{assess<br/>sufficient?}
+    ASSESS -- gaps<br/>& budget left --> SEARCH
+    ASSESS -- satisfied --> SYNTH[synthesize<br/>streaming LLM]
+    SYNTH --> ENRICH[enrich<br/>diagram · followups · tags · metrics]
+    ENRICH --> END([cited report])
 
-### 2. Backend
+    style PLAN fill:#1e293b,stroke:#38bdf8,color:#fff
+    style SEARCH fill:#1e293b,stroke:#38bdf8,color:#fff
+    style ASSESS fill:#1e293b,stroke:#a78bfa,color:#fff
+    style SYNTH fill:#1e293b,stroke:#34d399,color:#fff
+    style ENRICH fill:#1e293b,stroke:#f472b6,color:#fff
+```
+
+**Termination is guaranteed** — the round budget (`MAX_ROUNDS`) hard-caps the assess/search loop. **Streaming synthesis** happens outside the graph so the LLM's tokens can flow directly to SSE events without the atomic-node constraint of LangGraph.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for full design decisions, sequence diagrams, and trade-off analysis.
+
+---
+
+## 🚀 Features
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### 🤖 AI pipeline
+
+- **LangGraph state machine** with conditional routing and guaranteed loop termination
+- **RAG over user documents** — ChromaDB + `sentence-transformers` (MiniLM), works offline
+- **Token-by-token streaming synthesis** — no more blank-screen waits
+- **5 report templates** — Standard, Executive, Deep Dive, Pros/Cons, Timeline
+- **Auto-generated Mermaid mind maps** — one per report
+- **Follow-up chat** grounded in the same numbered sources
+- **LLM-suggested tags** + follow-up questions after every run
+- **Runtime model fallback** — hits any Groq rate limit / decommissioned model? Transparent switch to the next in the chain
+- **Graceful degradation** — if every model is exhausted, the run still returns a source-only report with citations
+
+</td>
+<td width="50%" valign="top">
+
+### 🎨 Frontend UX
+
+- **Home dashboard** with stats, activity chart, popular tags, recent + bookmarked sessions
+- **Command palette (⌘K)** with fuzzy search across sessions, templates, actions
+- **Query autocomplete** — Tab to accept recent or suggested prompts
+- **Voice input** — Web Speech API microphone on every input
+- **Focus mode** — distraction-free full-screen reader (+/- to resize)
+- **Auto-generated Table of Contents** — sticky rail, scroll-sync active heading
+- **Enhanced sources panel** — favicons, domain chips, search + inline highlighting, expand-in-place
+- **Bookmarks + hashtags + autosaving notes** on every session
+- **Toast notifications** for every action
+- **Shareable URLs** — `#/session/<id>` deep-links back to any run
+- **Error boundary** + **SSE reconnect** with exponential backoff
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 🛠️ Engineering rigour
+
+- **55 pytest cases** — mocked LLM + Tavily, isolated per-test data dirs, runs offline in <5s
+- **LLM-as-judge evals** — scores every report on 5 rubrics (coverage / citations / groundedness / clarity / honesty)
+- **Structured telemetry** — every LLM call captured via LangChain callback, JSONL logs to `data/telemetry/YYYY-MM-DD.jsonl`
+- **Real token + USD cost tracking** — surfaced in the metrics tile per run
+- **CI on GitHub Actions** — pytest matrix (Python 3.12 + 3.13) + frontend build on every push
+- **Dockerized backend** with health-check + persistent volume support
+- **Response cache** with TTL for identical questions
+- **In-memory per-IP rate limiter** with `X-Forwarded-For` awareness
+
+</td>
+<td width="50%" valign="top">
+
+### 🚢 Operations
+
+- **Real /health endpoint** — dependency checks (Groq key, Tavily key, sessions dir, ChromaDB) return `ok` / `degraded` / `error`
+- **Server-sent events** for step / source / report-delta / diagram / followup / tag / metric updates
+- **Persistent JSON session store** with search, related-sessions, and aggregate stats endpoints
+- **Feature flags** for graceful degradation — disable RAG or Crew without breaking anything
+- **Zero external observability deps** — grep-friendly JSONL logs, ready to ship to Loki
+- **Ephemeral-safe** — sessions + Chroma + HF cache all live under `/app/data`, one volume mount and you have persistence
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🧰 Tech stack
+
+<table>
+<tr>
+<td valign="top" width="33%">
+
+**Backend**
+
+`Python 3.12+`
+`FastAPI`
+`LangGraph`
+`LangChain`
+`Groq LLM API`
+`Tavily Search API`
+`ChromaDB`
+`sentence-transformers`
+`Pydantic`
+`Uvicorn`
+
+</td>
+<td valign="top" width="33%">
+
+**Frontend**
+
+`React 18`
+`TypeScript 5.5`
+`Vite 5`
+`TailwindCSS 3`
+`react-markdown` + `remark-gfm`
+`Mermaid 11`
+`Web Speech API`
+`Server-Sent Events`
+
+</td>
+<td valign="top" width="33%">
+
+**Infra & tooling**
+
+`Docker`
+`Railway`
+`Vercel`
+`GitHub Actions`
+`pytest`
+`LLM-as-judge evals`
+`JSONL structured logging`
+
+</td>
+</tr>
+</table>
+
+---
+
+## ⚡ Quick start
+
+You'll need two free API keys:
+
+- **Groq** — <https://console.groq.com/keys>
+- **Tavily** — <https://app.tavily.com> *(free 1000 searches/month)*
+
+### Option A — Docker (one command)
+
+```bash
+cp .env.example .env    # fill in the two keys
+docker compose up --build
+```
+
+Open <http://localhost:5173>.
+
+### Option B — Native
 
 ```powershell
+# Backend
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
-copy .env.example .env
-# open .env and paste your two keys
-```
+copy .env.example .env       # paste your two keys
+python -m uvicorn app.api:app --reload --port 8000
 
-Run the API:
-
-```powershell
-.\.venv\Scripts\python.exe -m uvicorn app.api:app --reload --port 8000
-```
-
-### 3. Frontend
-
-```powershell
+# Frontend (new terminal)
 cd frontend
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173 . The Vite dev server proxies `/api` to FastAPI on
-port 8000, so no CORS wrangling needed.
-
-### 4. (Optional) Streamlit UI
-
-The original Streamlit UI still works:
-
-```powershell
-streamlit run streamlit_app.py
-```
+Open <http://localhost:5173>.
 
 ---
 
-## Tests & evals
+## 🧪 Testing & evaluation
 
 ```powershell
-# Unit + API tests (offline; mocks LLM + Tavily)
-.\.venv\Scripts\python.exe -m pytest
+# 55 unit + API tests — offline, mocks LLM + Tavily, ~3 seconds
+python -m pytest
 
-# End-to-end quality evals (hits real APIs, ~5-10 cents / full sweep)
-.\.venv\Scripts\python.exe -m evals.run_eval
-.\.venv\Scripts\python.exe -m evals.run_eval --ids rag-basics,mcp-security
+# End-to-end quality evals — real APIs, ~5-10¢ per full sweep
+python -m evals.run_eval
+python -m evals.run_eval --ids rag-basics,mcp-security
 ```
 
-See [evals/README.md](evals/README.md) for what each rubric measures and
-how to add new questions.
-
-Every research run also emits a structured telemetry line to
-`data/telemetry/YYYY-MM-DD.jsonl`:
+Every run also emits a structured telemetry line to `data/telemetry/YYYY-MM-DD.jsonl`:
 
 ```json
 {"ts":"2026-09-17T...","event":"llm.call","run_id":"a1b2...","node":"synthesize","model":"groq/compound-mini","input_tokens":1240,"output_tokens":812,"cost_usd":0.000368}
 ```
 
-Grep-friendly, no external observability service required.
+Grep-friendly, no external observability service required. See [evals/README.md](evals/README.md) for the rubric definitions.
 
 ---
 
-## Project structure
+## 🌍 Deployment
+
+Both halves deploy in ~15 minutes each:
+
+- **Backend → Railway** — auto-detected from the `Dockerfile`, health-checked at `/health`, persistent volume at `/app/data`
+- **Frontend → Vercel** — Vite static build, `vercel.json` rewrites `/api/*` to the Railway URL, no env vars needed
+
+Step-by-step click-through guide with env vars, CORS wiring, and rollback: **[DEPLOY.md](DEPLOY.md)**
+
+---
+
+## 📁 Project structure
 
 ```
 deep-research-agent/
 ├── app/
-│   ├── config.py       # env-driven typed settings + directory bootstrap
-│   ├── agent.py        # LangGraph pipeline (plan → search → assess → synthesize)
-│   ├── crew.py         # CrewAI 5-agent crew (planner, web, docs, critic, writer)
-│   ├── rag.py          # ChromaDB vector store + PDF/TXT ingestion
-│   ├── session.py      # JSON-based session persistence
-│   └── api.py          # FastAPI: research, crew, docs, sessions, SSE
+│   ├── agent.py         # LangGraph pipeline + streaming synthesis + model fallback
+│   ├── crew.py          # Native multi-agent crew (LangChain-based, no crewai dep)
+│   ├── rag.py           # ChromaDB vector store + PDF/TXT ingestion
+│   ├── chat.py          # Follow-up chat grounded in a session's sources
+│   ├── session.py       # JSON-based session persistence + search + related + stats
+│   ├── cache.py         # TTL cache for identical questions
+│   ├── rate_limit.py    # In-memory per-IP sliding-window limiter
+│   ├── middleware.py    # JSONL request logging
+│   ├── telemetry.py     # LangChain callback for real token + USD tracking
+│   ├── config.py        # Env-driven typed settings + directory bootstrap
+│   └── api.py           # FastAPI: research, crew, docs, sessions, SSE, chat
 ├── frontend/
-│   ├── src/
-│   │   ├── App.tsx
-│   │   ├── components/  # Header, Sidebar, SearchPanel, ResearchStage,
-│   │   │                # ReportView, SourcesPanel, StepsPanel, SettingsModal,
-│   │   │                # ModeSelector
-│   │   ├── hooks/useResearch.ts       # SSE client + streaming state machine
-│   │   ├── lib/api.ts                 # typed API client
-│   │   └── types.ts
-│   ├── package.json
-│   ├── vite.config.ts
-│   └── tailwind.config.js
-├── streamlit_app.py    # (legacy) Streamlit UI
-├── requirements.txt
-├── .env.example
-└── README.md
+│   └── src/
+│       ├── App.tsx
+│       ├── components/  # ~30 components: Dashboard, CommandPalette,
+│       │                # ResearchStage, ReportView, SourcesPanel, ChatPanel,
+│       │                # NotesPanel, TableOfContents, FocusMode, MetricsBar,
+│       │                # Toast, ErrorBoundary, Sidebar, ...
+│       ├── hooks/       # useResearch, useChat, useHotkeys, useVoice
+│       ├── lib/api.ts   # Typed API client
+│       └── types.ts
+├── tests/               # 55 pytest cases: nodes, session store, FastAPI routes
+├── evals/               # LLM-as-judge harness + questions.yaml
+├── .github/workflows/   # CI: pytest matrix + frontend build
+├── ARCHITECTURE.md      # Design decisions, sequence diagrams, trade-offs
+├── DEPLOY.md            # Railway + Vercel step-by-step
+├── DEMO_SCRIPT.md       # 90-second Loom script (timed)
+├── LINKEDIN_POST.md     # Draft LinkedIn post
+├── Dockerfile
+├── docker-compose.yml
+├── railway.json
+└── frontend/vercel.json
 ```
 
 ---
 
-## API surface
+## 🔧 Configuration
 
-| Method | Path                                       | Notes                                   |
-|--------|--------------------------------------------|-----------------------------------------|
-| GET    | `/api/status`                              | Features, models, doc/session counts    |
-| GET    | `/api/templates`                           | Available report templates              |
-| POST   | `/api/research`                            | Blocking LangGraph run (accepts template) |
-| GET    | `/api/research/stream`                     | SSE stream of a LangGraph run           |
-| POST   | `/api/crew/research`                       | Blocking CrewAI run                     |
-| GET    | `/api/crew/stream`                         | SSE stream of a CrewAI run              |
-| POST   | `/api/documents/upload`                    | Multipart upload → ChromaDB             |
-| GET    | `/api/documents`                           | List indexed documents                  |
-| DELETE | `/api/documents/{doc_id}`                  | Remove one document                     |
-| DELETE | `/api/documents`                           | Wipe vector store                       |
-| GET    | `/api/sessions`                            | List saved research sessions            |
-| GET    | `/api/sessions/search?q=...`               | Full-text search across question/report/notes/tags |
-| GET    | `/api/sessions/stats`                      | Aggregate dashboard stats               |
-| GET    | `/api/sessions/{id}`                       | Load a full session                     |
-| GET    | `/api/sessions/{id}/related`               | Related past sessions (similarity)      |
-| PATCH  | `/api/sessions/{id}`                       | Update bookmarked / tags / notes        |
-| DELETE | `/api/sessions/{id}`                       | Delete a session                        |
-| POST   | `/api/sessions/{id}/chat`                  | Blocking follow-up chat over a session  |
-| GET    | `/api/sessions/{id}/chat/stream`           | SSE stream of a follow-up chat answer   |
-| DELETE | `/api/sessions/{id}/chat`                  | Clear a session's chat thread           |
+Everything is env-driven — no code changes to tune.
 
-Streams emit these event kinds (as SSE `data:` JSON): `step`, `sources`,
-`report_delta`, `report`, `diagram`, `followups`, `suggested_tags`,
-`metrics`, `done`, `error`. `report_delta` chunks arrive during synthesis
-so the client can render the report token-by-token. Chat streams
-additionally emit `user_turn`, `delta`, and `assistant_turn`.
+| Variable | Default | What it does |
+|---|---|---|
+| `GROQ_API_KEY` | *(required)* | LLM provider key |
+| `TAVILY_API_KEY` | *(required)* | Web search key |
+| `GROQ_MODEL` | `groq/compound-mini` | Primary LLM; fallback chain kicks in if it's rate-limited |
+| `MAX_SUBQUESTIONS` | `4` | Sub-questions per plan |
+| `RESULTS_PER_SEARCH` | `4` | Tavily results per query |
+| `MAX_ROUNDS` | `3` | Hard cap on the assess/search loop |
+| `RAG_TOP_K` | `4` | Doc chunks retrieved per query |
+| `EMBEDDING_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` | Runs locally, no key needed |
+| `ENABLE_RAG` | `true` | Toggle document search |
+| `ENABLE_CREW` | `true` | Toggle multi-agent crew mode |
+| `ALLOWED_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | CORS allowlist |
+| `RATE_LIMIT_PER_MINUTE` | `30` | Set to `0` to disable |
+| `RESEARCH_CACHE_TTL_SECONDS` | `900` | Cache for identical questions |
 
-The legacy `POST /research` and `GET /research/stream` endpoints are still
-served for the existing Streamlit UI.
+See [.env.example](.env.example) for the full list.
 
 ---
 
-## Tuning (all in `.env`)
+## 🗺️ Roadmap
 
-| Var                 | Default                                       | What it does                         |
-|---------------------|-----------------------------------------------|--------------------------------------|
-| `GROQ_MODEL`        | `groq/compound-mini`                          | LangGraph pipeline LLM               |
-| `CREW_MODEL`        | `groq/llama-3.3-70b-versatile`                | CrewAI crew LLM                      |
-| `MAX_SUBQUESTIONS`  | `4`                                           | Sub-questions per plan               |
-| `RESULTS_PER_SEARCH`| `4`                                           | Tavily results per query             |
-| `MAX_ROUNDS`        | `3`                                           | Hard cap on the assess/search loop   |
-| `RAG_TOP_K`         | `4`                                           | Doc chunks retrieved per query       |
-| `RAG_CHUNK_SIZE`    | `800`                                         | Characters per chunk                 |
-| `EMBEDDING_MODEL`   | `sentence-transformers/all-MiniLM-L6-v2`      | Runs locally, no API key             |
-| `ENABLE_RAG`        | `true`                                        | Toggle document search               |
-| `ENABLE_CREW`       | `true`                                        | Toggle CrewAI mode                   |
+- [ ] 90-second Loom demo linked at the top of the README
+- [ ] Screenshot gallery
+- [ ] Auth (bearer token) so it's safe to leave live long-term
+- [ ] LangSmith trace integration (optional, feature-flagged)
+- [ ] Streaming from more providers (OpenAI, Anthropic) with `LiteLLM`
+- [ ] Postgres session store option (for horizontal scale)
+- [ ] Native mobile responsive layout (currently desktop-first)
 
 ---
 
-## Notes
+## 🙏 Acknowledgements
 
-- The **first document upload** triggers a one-time download of the embedding
-  model (~90 MB). Subsequent uploads are instant.
-- CrewAI can be verbose — set `CREW_VERBOSE=true` in `.env` to see agent
-  chatter in the FastAPI logs.
-- Everything is persisted under `./data/` (Chroma index, session JSONs,
-  uploaded originals). Delete the folder to wipe local state.
+Built with genuinely wonderful open-source tools:
+
+- **[LangGraph](https://github.com/langchain-ai/langgraph)** for the state machine
+- **[Groq](https://groq.com/)** for absurdly fast LLM inference
+- **[Tavily](https://tavily.com/)** for research-grade web search
+- **[ChromaDB](https://www.trychroma.com/)** for embedded vector storage
+- **[Mermaid](https://mermaid.js.org/)** for the auto-generated mind maps
+- **[FastAPI](https://fastapi.tiangolo.com/)** + **[Vite](https://vitejs.dev/)** for a delightful DX
+
+---
+
+## 📄 License
+
+MIT — see [LICENSE](LICENSE).
+
+---
+
+<div align="center">
+
+**If this project taught you something or you'd like to work together —**
+
+**⭐ Star the repo**  ·  **[Open the live demo](https://deep-research-agent-henna.vercel.app)**  ·  **[Open an issue](https://github.com/Sanchitaccenture/deep-research-agent/issues)**
+
+<br>
+
+<sub>Built by <a href="https://github.com/Sanchitaccenture">Sanchit</a> · 2026</sub>
+
+</div>
