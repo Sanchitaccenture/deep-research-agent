@@ -16,17 +16,25 @@
 
 <br>
 
-### 🌐 **[Try it live — deep-research-agent-henna.vercel.app →](https://deep-research-agent-henna.vercel.app)**
+<a href="https://deep-research-agent-henna.vercel.app">
+  <img src="https://img.shields.io/badge/%F0%9F%9A%80_LAUNCH_LIVE_DEMO-6366f1?style=for-the-badge&labelColor=1e1b4b&color=6366f1" alt="Launch Live Demo" height="42" />
+</a>
+&nbsp;
+<a href="https://deep-research-agent-production-6f9a.up.railway.app/docs">
+  <img src="https://img.shields.io/badge/%F0%9F%93%8A_API_Docs-38bdf8?style=for-the-badge&labelColor=0c4a6e&color=0284c7" alt="API Docs" height="42" />
+</a>
+&nbsp;
+<a href="ARCHITECTURE.md">
+  <img src="https://img.shields.io/badge/%F0%9F%93%90_Architecture-8b5cf6?style=for-the-badge&labelColor=4c1d95" alt="Architecture" height="42" />
+</a>
 
-**[Docs](https://deep-research-agent-production-6f9a.up.railway.app/docs)** &nbsp;·&nbsp;
-**[Architecture](ARCHITECTURE.md)** &nbsp;·&nbsp;
-**[Deploy Guide](DEPLOY.md)** &nbsp;·&nbsp;
-**[Tests](tests/)** &nbsp;·&nbsp;
-**[Evals](evals/)**
+<br><br>
 
-<br>
+<sub>
 
-<sub>Deployed on Railway (backend) + Vercel (frontend) · Docker · CI on GitHub Actions</sub>
+`deep-research-agent-henna.vercel.app` &nbsp;·&nbsp; **[Deploy Guide](DEPLOY.md)** &nbsp;·&nbsp; **[Tests](tests/)** &nbsp;·&nbsp; **[Evals](evals/)** &nbsp;·&nbsp; Deployed on **Railway** + **Vercel** · Docker · CI on GitHub Actions
+
+</sub>
 
 </div>
 
