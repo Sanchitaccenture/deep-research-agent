@@ -6,11 +6,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://REPLACE_WITH_RAILWAY_URL/api/:path*"
+      "destination": "https://deep-research-agent-production-6f9a.up.railway.app/api/:path*"
     },
     {
       "source": "/health",
-      "destination": "https://REPLACE_WITH_RAILWAY_URL/health"
+      "destination": "https://deep-research-agent-production-6f9a.up.railway.app/health"
     }
   ],
   "headers": [
