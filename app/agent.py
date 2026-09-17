@@ -115,8 +115,9 @@ def _model_chain() -> List[str]:
     chain = [
         (config.GROQ_MODEL or "").strip(),
         "llama-3.1-8b-instant",       # small + huge daily quota — best rescue
-        "groq/compound-mini",         # agentic compound
         "llama-3.3-70b-versatile",    # big + versatile
+        "openai/gpt-oss-20b",         # newer, separate quota bucket
+        "openai/gpt-oss-120b",        # newer big model
     ]
     seen: set = set()
     out: List[str] = []
@@ -267,8 +268,13 @@ def plan_node(state: ResearchState) -> Dict[str, Any]:
         "Return ONLY a JSON array of strings, no prose, no markdown.\n\n"
         f"Question: {question}"
     )
-    raw = _content(_llm(temperature=0.3).invoke(prompt)).strip()
-    subs = _parse_json_list(raw) or [question]
+    try:
+        raw = _content(_llm(temperature=0.3).invoke(prompt)).strip()
+        subs = _parse_json_list(raw) or [question]
+    except Exception as exc:  # noqa: BLE001
+        # Every model failed. Skip planning and just search the raw question.
+        telemetry.emit("plan.llm_failed", level="warning", error=str(exc)[:200])
+        subs = [question]
     subs = subs[: config.MAX_SUBQUESTIONS]
 
     steps = state.get("steps", []) + [
@@ -394,8 +400,15 @@ def assess_node(state: ResearchState) -> Dict[str, Any]:
         "If sufficient is true, followups must be an empty array. "
         "Otherwise give 1-3 NEW, specific follow-up search queries that target the gaps."
     )
-    raw = _content(_llm(temperature=0.2).invoke(prompt)).strip()
-    decision = _parse_json_obj(raw)
+    try:
+        raw = _content(_llm(temperature=0.2).invoke(prompt)).strip()
+        decision = _parse_json_obj(raw)
+    except Exception as exc:  # noqa: BLE001
+        # Every model failed. Treat as sufficient so we exit the loop and
+        # let synthesis (with its own fallback + salvage) handle the write.
+        telemetry.emit("assess.llm_failed", level="warning", error=str(exc)[:200])
+        steps.append("Assessment: LLM unavailable -> forcing synthesis.")
+        return {"gaps": "", "pending_queries": [], "steps": steps}
 
     sufficient = bool(decision.get("sufficient", True))
     followups = [str(q) for q in decision.get("followups", []) if str(q).strip()][:3]
