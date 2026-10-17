@@ -1,5 +1,4 @@
 # Keep the serverless bundle small — none of this is needed at runtime.
-frontend/
 tests/
 evals/
 legacy/
