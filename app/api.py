@@ -77,7 +77,7 @@ def _friendly_error(raw: str) -> Dict[str, Any]:
             "error": "The configured LLM model has been retired or renamed by the provider.",
             "detail": (
                 "Set GROQ_MODEL in .env to a currently-supported model — e.g. "
-                "`groq/compound-mini` or `llama-3.1-8b-instant`."
+                "`openai/gpt-oss-20b` or `openai/gpt-oss-120b`."
             ),
             "kind": "model_missing",
         }

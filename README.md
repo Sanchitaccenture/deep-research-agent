@@ -336,7 +336,9 @@ Everything is env-driven — no code changes to tune.
 |---|---|---|
 | `GROQ_API_KEY` | *(required)* | LLM provider key |
 | `TAVILY_API_KEY` | *(required)* | Web search key |
-| `GROQ_MODEL` | `groq/compound-mini` | Primary LLM; fallback chain kicks in if it's rate-limited |
+| `GROQ_MODEL` | `openai/gpt-oss-20b` | Primary LLM; fallback chain kicks in if it's rate-limited |
+| `GROQ_MODEL_CHAIN` | `openai/gpt-oss-20b,openai/gpt-oss-120b,qwen/qwen3.8-27b` | Comma-separated fallback models tried after `GROQ_MODEL` (also used by follow-up chat) |
+| `CREW_MODEL` | `openai/gpt-oss-120b` | Model for Crew mode |
 | `MAX_SUBQUESTIONS` | `4` | Sub-questions per plan |
 | `RESULTS_PER_SEARCH` | `4` | Tavily results per query |
 | `MAX_ROUNDS` | `3` | Hard cap on the assess/search loop |

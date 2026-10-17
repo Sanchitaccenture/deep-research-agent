@@ -108,17 +108,12 @@ class ResearchState(TypedDict):
 def _model_chain() -> List[str]:
     """Ordered fallback chain of Groq-hosted models.
 
-    Priority: user's configured GROQ_MODEL first, then progressively different
-    models each on a separate daily quota bucket so a single-model rate-limit
-    doesn't kill a run. Duplicates dropped in order.
+    Priority: user's configured GROQ_MODEL first, then the models listed in
+    GROQ_MODEL_CHAIN (comma-separated), so a single-model rate-limit doesn't
+    kill a run. Duplicates dropped in order.
     """
-    chain = [
-        (config.GROQ_MODEL or "").strip(),
-        "llama-3.1-8b-instant",       # small + huge daily quota — best rescue
-        "llama-3.3-70b-versatile",    # big + versatile
-        "openai/gpt-oss-20b",         # newer, separate quota bucket
-        "openai/gpt-oss-120b",        # newer big model
-    ]
+    chain = [(config.GROQ_MODEL or "").strip()]
+    chain.extend((config.GROQ_MODEL_CHAIN or "").split(","))
     seen: set = set()
     out: List[str] = []
     for m in chain:

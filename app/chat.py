@@ -12,18 +12,13 @@ import time
 import uuid
 from typing import Any, Dict, Generator, List, Optional
 
-from langchain_groq import ChatGroq
-
+from app import agent
 from app.config import config
 from app import session as session_store
 
 
-def _llm(temperature: float = 0.2) -> ChatGroq:
-    return ChatGroq(
-        api_key=config.GROQ_API_KEY,
-        model=config.GROQ_MODEL or "groq/compound-mini",
-        temperature=temperature,
-    )
+def _llm(temperature: float = 0.2) -> Any:
+    return agent._llm(temperature)
 
 
 def _content(msg) -> str:

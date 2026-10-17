@@ -117,7 +117,7 @@ For the full feature set, run with Docker (`requirements-full.txt`):
 | Frontend loads but "API live" chip is red | Backend is down. Check the backend project's Vercel → Deployments → Logs, and `/health`. |
 | Report or follow-up chat "not found" | Sessions live in per-instance `/tmp`; re-run the research. Use Docker for persistent sessions. |
 | `429 Too many requests` | You're spamming. Wait 60s or raise `RATE_LIMIT_PER_MINUTE` in the backend env vars. |
-| Groq rate limit | Free tier daily quota is 100k tokens on the big models. Wait or set `GROQ_MODEL=llama-3.1-8b-instant` in the backend env vars (much higher quota). |
+| Groq rate limit | Free tier daily quota is 100k tokens on the big models. Wait or reorder `GROQ_MODEL` / `GROQ_MODEL_CHAIN` in the backend env vars. |
 
 ---
 

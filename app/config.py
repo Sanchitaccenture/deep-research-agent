@@ -26,8 +26,12 @@ class Config:
     ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
 
     # --- LLM models ---
-    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "groq/compound-mini")
-    CREW_MODEL: str = os.getenv("CREW_MODEL", "groq/llama-3.3-70b-versatile")
+    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
+    CREW_MODEL: str = os.getenv("CREW_MODEL", "openai/gpt-oss-120b")
+    GROQ_MODEL_CHAIN: str = os.getenv(
+        "GROQ_MODEL_CHAIN",
+        "openai/gpt-oss-20b,openai/gpt-oss-120b,qwen/qwen3.8-27b",
+    )
 
     # --- Research loop budgets ---
     MAX_SUBQUESTIONS: int = int(os.getenv("MAX_SUBQUESTIONS", "4"))
