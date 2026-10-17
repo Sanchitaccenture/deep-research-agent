@@ -316,7 +316,6 @@ deep-research-agent/
 ├── ARCHITECTURE.md      # Design decisions, sequence diagrams, trade-offs
 ├── DEPLOY.md            # Vercel step-by-step
 ├── DEMO_SCRIPT.md       # 90-second Loom script (timed)
-├── LINKEDIN_POST.md     # Draft LinkedIn post
 ├── index.py             # Vercel backend entrypoint (re-exports app.api:app)
 ├── requirements.txt     # Slim deps used by the Vercel backend
 ├── requirements-full.txt # Full deps (RAG, tests) for Docker / local / CI

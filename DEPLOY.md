@@ -105,8 +105,6 @@ For the full feature set, run with Docker (`requirements-full.txt`):
 - **Custom domain**: Vercel → Settings → Domains, add `deep-research.yourdomain.com`.
 - **Keep-warm**: an uptime monitor hitting `https://<backend-domain>/health` every 5 minutes.
 - **90-second Loom demo**: [DEMO_SCRIPT.md](DEMO_SCRIPT.md) has the exact script.
-- **LinkedIn post**: [LINKEDIN_POST.md](LINKEDIN_POST.md) has the draft — swap
-  in the URL + video and post.
 
 ---
 

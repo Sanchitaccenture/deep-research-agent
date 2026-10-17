@@ -78,7 +78,7 @@ screenshot, then the ARCHITECTURE.md mermaid diagram)*
 
 1. Copy the Loom share URL.
 2. Download the .mp4 (Loom menu → Download) so LinkedIn can host it natively.
-3. Post on LinkedIn — [LINKEDIN_POST.md](LINKEDIN_POST.md) has the draft.
+3. Post it on LinkedIn.
 4. Add the Loom URL to the top of your GitHub README:
 
    ```markdown
