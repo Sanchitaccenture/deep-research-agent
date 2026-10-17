@@ -20,7 +20,7 @@
   <img src="https://img.shields.io/badge/%F0%9F%9A%80_LAUNCH_LIVE_DEMO-6366f1?style=for-the-badge&labelColor=1e1b4b&color=6366f1" alt="Launch Live Demo" height="42" />
 </a>
 &nbsp;
-<a href="https://deep-research-agent-production-6f9a.up.railway.app/docs">
+<a href="https://deep-research-api-five.vercel.app/docs">
   <img src="https://img.shields.io/badge/%F0%9F%93%8A_API_Docs-38bdf8?style=for-the-badge&labelColor=0c4a6e&color=0284c7" alt="API Docs" height="42" />
 </a>
 &nbsp;
@@ -32,7 +32,7 @@
 
 <sub>
 
-`deep-research-agent-henna.vercel.app` &nbsp;·&nbsp; **[Deploy Guide](DEPLOY.md)** &nbsp;·&nbsp; **[Tests](tests/)** &nbsp;·&nbsp; **[Evals](evals/)** &nbsp;·&nbsp; Deployed on **Railway** + **Vercel** · Docker · CI on GitHub Actions
+`deep-research-agent-henna.vercel.app` &nbsp;·&nbsp; **[Deploy Guide](DEPLOY.md)** &nbsp;·&nbsp; **[Tests](tests/)** &nbsp;·&nbsp; **[Evals](evals/)** &nbsp;·&nbsp; Deployed on **Vercel** · Docker · CI on GitHub Actions
 
 </sub>
 
@@ -198,7 +198,6 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for full design decisions, sequence diagr
 **Infra & tooling**
 
 `Docker`
-`Railway`
 `Vercel`
 `GitHub Actions`
 `pytest`
@@ -270,12 +269,18 @@ Grep-friendly, no external observability service required. See [evals/README.md]
 
 ## 🌍 Deployment
 
-Both halves deploy in ~15 minutes each:
+Frontend and backend are both deployed on **Vercel** as two projects from this repo:
 
-- **Backend → Railway** — auto-detected from the `Dockerfile`, health-checked at `/health`, persistent volume at `/app/data`
-- **Frontend → Vercel** — Vite static build, `vercel.json` rewrites `/api/*` to the Railway URL, no env vars needed
+- **Backend** — Root Directory is the repo root. Vercel uses [`index.py`](index.py) as the entrypoint (it re-exports the FastAPI `app`) and installs the slim [`requirements.txt`](requirements.txt). Set two environment variables: `GROQ_API_KEY` and `TAVILY_API_KEY`.
+- **Frontend** — Root Directory is `frontend`. Vite static build; `frontend/vercel.json` rewrites `/api/*` and `/health` to the backend project. No env vars needed.
 
-Step-by-step click-through guide with env vars, CORS wiring, and rollback: **[DEPLOY.md](DEPLOY.md)**
+**Docker is still available** for the full feature set: it installs [`requirements-full.txt`](requirements-full.txt) (ChromaDB, sentence-transformers, tests) — see Quick start above.
+
+Step-by-step guide with env vars and rollback: **[DEPLOY.md](DEPLOY.md)**
+
+### Hosted demo limitations
+
+The hosted demo runs without **document upload (RAG)** and **Crew mode** because of Vercel's 500 MB function limit. **Session history is best-effort** because Vercel storage is temporary. The full feature set runs with Docker.
 
 ---
 
@@ -309,12 +314,16 @@ deep-research-agent/
 ├── evals/               # LLM-as-judge harness + questions.yaml
 ├── .github/workflows/   # CI: pytest matrix + frontend build
 ├── ARCHITECTURE.md      # Design decisions, sequence diagrams, trade-offs
-├── DEPLOY.md            # Railway + Vercel step-by-step
+├── DEPLOY.md            # Vercel step-by-step
 ├── DEMO_SCRIPT.md       # 90-second Loom script (timed)
 ├── LINKEDIN_POST.md     # Draft LinkedIn post
+├── index.py             # Vercel backend entrypoint (re-exports app.api:app)
+├── requirements.txt     # Slim deps used by the Vercel backend
+├── requirements-full.txt # Full deps (RAG, tests) for Docker / local / CI
+├── .vercelignore        # Files excluded from the Vercel bundle
 ├── Dockerfile
 ├── docker-compose.yml
-├── railway.json
+├── railway.json         # legacy (previous Railway deployment)
 └── frontend/vercel.json
 ```
 

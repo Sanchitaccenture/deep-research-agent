@@ -24,7 +24,7 @@ recruiter's timezone.
 > 📊 Real per-run token + USD cost tracking via LangChain callbacks
 > 🧪 55 pytest cases (all passing ✓) + LLM-as-judge evals harness for
 >    quality regression tests
-> 🚀 Deployed on Railway (backend) + Vercel (frontend), CI on GitHub Actions
+> 🚀 Deployed on Vercel (frontend + backend), CI on GitHub Actions
 >
 > **Stack:** Python · FastAPI · LangGraph · LangChain · Groq · Tavily ·
 > ChromaDB · React 18 · TypeScript · Vite · TailwindCSS
