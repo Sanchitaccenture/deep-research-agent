@@ -6,11 +6,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://deep-research-agent-production-6f9a.up.railway.app/api/:path*"
+      "destination": "https://YOUR-BACKEND-PROJECT.vercel.app/api/:path*"
     },
     {
       "source": "/health",
-      "destination": "https://deep-research-agent-production-6f9a.up.railway.app/health"
+      "destination": "https://YOUR-BACKEND-PROJECT.vercel.app/health"
     }
   ],
   "headers": [

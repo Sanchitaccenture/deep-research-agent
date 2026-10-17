@@ -1,0 +1,25 @@
+# Keep the serverless bundle small — none of this is needed at runtime.
+frontend/
+tests/
+evals/
+legacy/
+.streamlit/
+.github/
+docs/
+data/
+*.md
+!README.md
+.env
+.env.*
+!.env.example
+requirements-full.txt
+requirements-crew.txt
+Dockerfile
+docker-compose.yml
+railway.json
+pytest.ini
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.git/

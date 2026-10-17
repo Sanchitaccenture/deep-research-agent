@@ -25,8 +25,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     ENABLE_RAG=true
 
 # Install deps first — best cache hit rate.
-COPY requirements.txt ./
-RUN pip install -r requirements.txt
+COPY requirements-full.txt ./
+RUN pip install -r requirements-full.txt
 
 # Now the app.
 COPY app/ ./app/

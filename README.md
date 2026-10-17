@@ -233,7 +233,7 @@ Open <http://localhost:5173>.
 # Backend
 python -m venv .venv
 .\.venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements-full.txt
 copy .env.example .env       # paste your two keys
 python -m uvicorn app.api:app --reload --port 8000
 

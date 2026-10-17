@@ -6,6 +6,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# On Vercel the only writable location is /tmp, and the heavy RAG stack
+# does not fit the 500 MB function bundle limit. Env vars still override.
+ON_VERCEL: bool = bool(os.getenv("VERCEL"))
+_DATA_ROOT: str = os.getenv("DATA_DIR", "/tmp/data" if ON_VERCEL else "./data")
+
 
 def _bool(name: str, default: str = "false") -> bool:
     return os.getenv(name, default).lower() in ("1", "true", "yes", "on")
@@ -38,17 +43,17 @@ class Config:
     RAG_CHUNK_OVERLAP: int = int(os.getenv("RAG_CHUNK_OVERLAP", "120"))
 
     # --- Data directories ---
-    DATA_DIR: Path = Path(os.getenv("DATA_DIR", "./data"))
+    DATA_DIR: Path = Path(_DATA_ROOT)
     CHROMA_PERSIST_DIR: Path = Path(
-        os.getenv("CHROMA_PERSIST_DIR", "./data/chroma")
+        os.getenv("CHROMA_PERSIST_DIR", f"{_DATA_ROOT}/chroma")
     )
-    SESSIONS_DIR: Path = Path(os.getenv("SESSIONS_DIR", "./data/sessions"))
-    UPLOADS_DIR: Path = Path(os.getenv("UPLOADS_DIR", "./data/uploads"))
+    SESSIONS_DIR: Path = Path(os.getenv("SESSIONS_DIR", f"{_DATA_ROOT}/sessions"))
+    UPLOADS_DIR: Path = Path(os.getenv("UPLOADS_DIR", f"{_DATA_ROOT}/uploads"))
     COLLECTION_NAME: str = os.getenv("COLLECTION_NAME", "research_docs")
 
     # --- Feature flags ---
-    ENABLE_RAG: bool = _bool("ENABLE_RAG", "true")
-    ENABLE_CREW: bool = _bool("ENABLE_CREW", "true")
+    ENABLE_RAG: bool = _bool("ENABLE_RAG", "false" if ON_VERCEL else "true")
+    ENABLE_CREW: bool = _bool("ENABLE_CREW", "false" if ON_VERCEL else "true")
     CREW_VERBOSE: bool = _bool("CREW_VERBOSE", "false")
 
     # --- API ---
@@ -75,7 +80,11 @@ class Config:
             self.SESSIONS_DIR,
             self.UPLOADS_DIR,
         ):
-            Path(d).mkdir(parents=True, exist_ok=True)
+            try:
+                Path(d).mkdir(parents=True, exist_ok=True)
+            except OSError:
+                # Read-only filesystem: features needing the dir fail individually.
+                pass
 
     def origins(self) -> list[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
