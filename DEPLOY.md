@@ -117,7 +117,7 @@ For the full feature set, run with Docker (`requirements-full.txt`):
 | Frontend loads but "API live" chip is red | Backend is down. Check the backend project's Vercel → Deployments → Logs, and `/health`. |
 | Report or follow-up chat "not found" | Sessions live in per-instance `/tmp`; re-run the research. Use Docker for persistent sessions. |
 | `429 Too many requests` | You're spamming. Wait 60s or raise `RATE_LIMIT_PER_MINUTE` in the backend env vars. |
-| Groq rate limit | Free tier daily quota is 100k tokens on the big models. Wait or reorder `GROQ_MODEL` / `GROQ_MODEL_CHAIN` in the backend env vars. |
+| Groq rate limit | The free tier allows about 200K tokens per day per model (see <https://console.groq.com/settings/limits> for your account's limits). Wait or reorder `GROQ_MODEL` / `GROQ_MODEL_CHAIN` in the backend env vars. |
 
 ---
 
@@ -128,7 +128,7 @@ For portfolio/demo traffic (a few researches per day):
 | Service | Cost |
 |---------|------|
 | Vercel (frontend + backend, Hobby plan) | Free for personal projects, no credit card |
-| Groq API | Free tier: 100k tokens/day is enough for ~10 researches/day |
+| Groq API | Free tier: ~200K tokens/day per model is enough for ~10+ researches/day |
 | Tavily search | Free tier: 1000 searches/month |
 | **Total** | **$0/mo** |
 

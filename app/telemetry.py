@@ -46,7 +46,9 @@ _DEFAULT_PRICES = {
     "groq/llama-3.3-70b-versatile":    {"input": 0.59, "output": 0.79},
     "groq/llama-3.1-8b-instant":       {"input": 0.05, "output": 0.08},
     "openai/gpt-oss-20b":              {"input": 0.15, "output": 0.60},
+    "openai/gpt-oss-120b":             {"input": 0.15, "output": 0.75},
     "qwen/qwen3.6-27b":                {"input": 0.20, "output": 0.60},
+    "qwen/qwen3.8-27b":                {"input": 0.20, "output": 0.60},
     # Fallback if we see an unknown model
     "_default":                        {"input": 0.20, "output": 0.60},
 }

@@ -42,13 +42,10 @@ def _llm(temperature: float = 0.2) -> Any:
     configured = (config.CREW_MODEL or config.GROQ_MODEL or "").strip()
     if configured:
         candidates.append(configured)
-    candidates.extend([
-        "groq/compound-mini",
-        "openai/gpt-oss-20b",
-        "qwen/qwen3.6-27b",
-    ])
+    candidates.extend((config.GROQ_MODEL_CHAIN or "").split(","))
     seen: set = set()
     for name in candidates:
+        name = (name or "").strip()
         if not name or name in seen:
             continue
         seen.add(name)
@@ -63,7 +60,7 @@ def _llm(temperature: float = 0.2) -> Any:
             continue
     return ChatGroq(
         api_key=config.GROQ_API_KEY,
-        model="groq/compound-mini",
+        model="openai/gpt-oss-20b",
         temperature=temperature,
     ).with_config({"callbacks": telemetry.callbacks()})
 
