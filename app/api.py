@@ -22,6 +22,7 @@ Endpoints (v3):
 
   POST /api/sessions/{id}/chat         — blocking follow-up chat over a session
   GET  /api/sessions/{id}/chat/stream  — SSE stream a follow-up chat answer
+  POST /api/chat/stream                — stateless SSE chat (client sends context)
   DELETE /api/sessions/{id}/chat       — clear a session's chat thread
 """
 from __future__ import annotations
@@ -31,10 +32,10 @@ import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 import re
 
@@ -143,6 +144,17 @@ class ResearchRequest(BaseModel):
 
 
 class ChatRequest(BaseModel):
+    message: str
+
+
+MAX_CHAT_BODY_BYTES = 200_000
+
+
+class StatelessChatRequest(BaseModel):
+    question: str = ""
+    report: str = ""
+    sources: List[Dict[str, Any]] = []
+    history: List[Dict[str, Any]] = []
     message: str
 
 
@@ -560,6 +572,34 @@ def chat_stream(session_id: str, message: str) -> StreamingResponse:
     def event_generator():
         try:
             for update in chat_module.stream_ask(session_id, message):
+                yield f"data: {json.dumps(update)}\n\n"
+        except Exception as exc:  # noqa: BLE001
+            yield f"data: {json.dumps({'error': f'{exc.__class__.__name__}: {exc}'})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@app.post("/api/chat/stream")
+async def chat_stream_stateless(request: Request) -> StreamingResponse:
+    """Stateless follow-up chat: the client supplies the context; no session store."""
+    raw = await request.body()
+    if len(raw) > MAX_CHAT_BODY_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Request body too large (limit {MAX_CHAT_BODY_BYTES // 1000} KB).",
+        )
+    try:
+        req = StatelessChatRequest.model_validate_json(raw)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail="Invalid chat request body.") from exc
+    if not req.message.strip():
+        raise HTTPException(status_code=400, detail="Message must not be empty.")
+
+    def event_generator():
+        try:
+            for update in chat_module.stream_stateless(
+                req.question, req.report, req.sources, req.history, req.message.strip()
+            ):
                 yield f"data: {json.dumps(update)}\n\n"
         except Exception as exc:  # noqa: BLE001
             yield f"data: {json.dumps({'error': f'{exc.__class__.__name__}: {exc}'})}\n\n"

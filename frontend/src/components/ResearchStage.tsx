@@ -297,6 +297,8 @@ export default function ResearchStage({
         {tab === 'chat' && (
           <ChatPanel
             sessionId={state.sessionId}
+            question={question}
+            report={state.report}
             initialTurns={state.chat}
             sources={state.sources}
           />

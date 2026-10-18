@@ -140,6 +140,66 @@ def stream_ask(session_id: str, user_message: str) -> Generator[Dict[str, Any], 
     yield {"done": True, "assistant_turn": ai_turn}
 
 
+MAX_REPORT_CHARS = 4000
+MAX_SOURCE_CHARS = 12000
+MAX_HISTORY_TURNS = 6
+MAX_MESSAGE_CHARS = 4000
+_SOURCE_OVERHEAD = 120  # per-source title/url/header budget
+
+
+def trim_sources(sources: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Cap total source text at ~MAX_SOURCE_CHARS, keeping each source's id."""
+    if not sources:
+        return []
+    per_source = max(150, MAX_SOURCE_CHARS // len(sources) - _SOURCE_OVERHEAD)
+    out: List[Dict[str, Any]] = []
+    used = 0
+    for s in sources:
+        content = str(s.get("content", "") or "")[: min(900, per_source)]
+        cost = len(content) + _SOURCE_OVERHEAD
+        if out and used + cost > MAX_SOURCE_CHARS:
+            break
+        used += cost
+        out.append({**s, "content": content})
+    return out
+
+
+def stream_stateless(
+    question: str,
+    report: str,
+    sources: List[Dict[str, Any]],
+    history: List[Dict[str, Any]],
+    message: str,
+) -> Generator[Dict[str, Any], None, None]:
+    """Streaming chat from client-supplied context. Never touches the session store."""
+    config.validate()
+    prompt = _build_prompt(
+        original_question=question,
+        report=(report or "")[:MAX_REPORT_CHARS],
+        sources=trim_sources(sources),
+        history=[
+            {"role": str(h.get("role", "user")), "content": str(h.get("content", ""))}
+            for h in (history or [])[-MAX_HISTORY_TURNS:]
+        ],
+        user_message=message[:MAX_MESSAGE_CHARS],
+    )
+
+    yield {"user_turn": _turn("user", message)}
+
+    parts: List[str] = []
+    try:
+        for chunk in _llm(temperature=0.2).stream(prompt):
+            delta = _content(chunk)
+            if delta:
+                parts.append(delta)
+                yield {"delta": delta}
+    except Exception as exc:  # noqa: BLE001
+        yield {"error": f"{exc.__class__.__name__}: {exc}"}
+        return
+
+    yield {"done": True, "assistant_turn": _turn("assistant", "".join(parts).strip())}
+
+
 def _turn(role: str, content: str) -> Dict[str, str]:
     return {
         "id": uuid.uuid4().hex[:10],

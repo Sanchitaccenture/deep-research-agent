@@ -196,6 +196,87 @@ class TestChat:
         assert r.status_code == 404
 
 
+class TestStatelessChat:
+    @staticmethod
+    def _events(resp):
+        return [
+            json.loads(line[len("data: "):])
+            for line in resp.text.splitlines()
+            if line.startswith("data: ")
+        ]
+
+    def _body(self, **over):
+        body = {
+            "question": "What is RAG?",
+            "report": "## Overview RAG combines retrieval and generation [1].",
+            "sources": [
+                {"id": 1, "title": "T1", "url": "https://a.test", "content": "alpha"},
+                {"id": 2, "title": "T2", "url": "https://b.test", "content": "beta"},
+            ],
+            "history": [],
+            "message": "Summarize it",
+        }
+        body.update(over)
+        return body
+
+    def test_streams_events_without_touching_sessions(
+        self, client, fake_llm, llm_calls
+    ):
+        fake_llm.append("The answer is 42 [1].")
+        r = client.post("/api/chat/stream", json=self._body())
+        assert r.status_code == 200
+        assert r.headers["content-type"].startswith("text/event-stream")
+        events = self._events(r)
+        assert events[0]["user_turn"]["role"] == "user"
+        assert events[0]["user_turn"]["content"] == "Summarize it"
+        assert "".join(e["delta"] for e in events if "delta" in e) == "The answer is 42 [1]."
+        done = events[-1]
+        assert done["done"] is True
+        assert done["assistant_turn"]["role"] == "assistant"
+        assert "42" in done["assistant_turn"]["content"]
+        prompt = llm_calls[0]["prompt"]
+        assert "What is RAG?" in prompt and "[2] (web) T2" in prompt
+        assert client.get("/api/sessions").json()["sessions"] == []
+
+    def test_trims_report_sources_and_history(self, client, fake_llm, llm_calls):
+        fake_llm.append("ok")
+        history = [{"role": "user", "content": f"turn-{i}"} for i in range(10)]
+        sources = [
+            {"id": i, "title": f"S{i}", "url": "u", "content": "x" * 5000}
+            for i in range(1, 31)
+        ]
+        r = client.post(
+            "/api/chat/stream",
+            json=self._body(report="R" * 9000, sources=sources, history=history),
+        )
+        assert r.status_code == 200
+        prompt = llm_calls[0]["prompt"]
+        assert "R" * 4000 in prompt and "R" * 4001 not in prompt
+        assert "turn-3" not in prompt and "turn-4" in prompt and "turn-9" in prompt
+        assert "[1] (web) S1" in prompt
+        assert prompt.count("x") <= 12000
+
+    def test_empty_message_rejected(self, client, fake_llm):
+        r = client.post("/api/chat/stream", json=self._body(message="   "))
+        assert r.status_code == 400
+
+    def test_oversized_body_rejected(self, client, fake_llm):
+        r = client.post("/api/chat/stream", json=self._body(report="x" * 250_000))
+        assert r.status_code == 413
+        assert "too large" in r.json()["detail"].lower()
+
+    def test_llm_failure_emits_error_event(self, client, monkeypatch):
+        from app import chat as chat_module
+
+        class Boom:
+            def stream(self, prompt):
+                raise RuntimeError("boom")
+
+        monkeypatch.setattr(chat_module, "_llm", lambda temperature=0.2: Boom())
+        events = self._events(client.post("/api/chat/stream", json=self._body()))
+        assert "boom" in events[-1]["error"]
+
+
 class TestCrewGating:
     def test_crew_endpoint_disabled_returns_400(self, client):
         # Default in conftest is ENABLE_CREW=false

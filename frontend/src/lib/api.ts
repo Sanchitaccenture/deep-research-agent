@@ -6,6 +6,7 @@ import type {
   ResearchMode,
   SessionSummary,
   SessionsStats,
+  Source,
   StatusResponse,
 } from '../types'
 
@@ -87,6 +88,22 @@ export const api = {
 
   chatStreamUrl: (sessionId: string, message: string) =>
     `${API}/sessions/${sessionId}/chat/stream?message=${encodeURIComponent(message)}`,
+
+  chatStream: (body: StatelessChatBody, signal: AbortSignal) =>
+    fetch(`${API}/chat/stream`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal,
+    }),
+}
+
+export interface StatelessChatBody {
+  question: string
+  report: string
+  sources: Source[]
+  history: { role: string; content: string }[]
+  message: string
 }
 
 export type { ChatTurn }

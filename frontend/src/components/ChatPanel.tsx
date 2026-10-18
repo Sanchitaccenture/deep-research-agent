@@ -8,11 +8,19 @@ import type { ChatTurn, Source } from '../types'
 
 interface Props {
   sessionId?: string
+  question: string
+  report: string
   initialTurns: ChatTurn[]
   sources: Source[]
 }
 
-export default function ChatPanel({ sessionId, initialTurns, sources }: Props) {
+export default function ChatPanel({
+  sessionId,
+  question,
+  report,
+  initialTurns,
+  sources,
+}: Props) {
   const chat = useChat(initialTurns)
   const [input, setInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -33,7 +41,7 @@ export default function ChatPanel({ sessionId, initialTurns, sources }: Props) {
     const t = input.trim()
     if (!t || !sessionId || chat.state.streaming) return
     setInput('')
-    chat.send(sessionId, t)
+    chat.send({ question, report, sources }, t)
   }
 
   if (!sessionId) {

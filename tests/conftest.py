@@ -57,6 +57,12 @@ def _isolated_data_dirs(tmp_path: Path, monkeypatch):
         _research_cache.clear()
     except Exception:
         pass
+    # Reset the per-IP rate limiter so request counts don't leak between tests.
+    try:
+        from app import rate_limit as _rate_limit
+        _rate_limit._buckets.clear()
+    except Exception:
+        pass
     yield
 
 
