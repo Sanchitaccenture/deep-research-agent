@@ -128,10 +128,18 @@ def _model_chain() -> List[str]:
 
 
 def _make_client(model: str, temperature: float) -> Any:
+    kwargs: Dict[str, Any] = {}
+    effort = (config.REASONING_EFFORT or "").strip()
+    if effort and model.removeprefix("groq/").startswith("openai/gpt-oss"):
+        if "reasoning_effort" in getattr(ChatGroq, "model_fields", {}):
+            kwargs["reasoning_effort"] = effort
+        else:
+            kwargs["model_kwargs"] = {"reasoning_effort": effort}
     return ChatGroq(
         api_key=config.GROQ_API_KEY,
         model=model,
         temperature=temperature,
+        **kwargs,
     ).with_config({"callbacks": telemetry.callbacks()})
 
 

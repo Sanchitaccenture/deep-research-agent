@@ -190,3 +190,75 @@ class TestParseHelpers:
         d = _parse_json_obj("this is definitely not json")
         # The fallback pretends coverage is sufficient so the graph can terminate.
         assert d["sufficient"] is True
+
+
+class TestReasoningEffort:
+    @staticmethod
+    def _install_fake(monkeypatch, supports_field: bool):
+        from app import agent as agent_module
+
+        captured: dict = {}
+
+        class FakeGroq:
+            model_fields = {"reasoning_effort": None} if supports_field else {}
+
+            def __init__(self, **kwargs):
+                captured.update(kwargs)
+
+            def with_config(self, _cfg):
+                return self
+
+        monkeypatch.setattr(agent_module, "ChatGroq", FakeGroq)
+        return agent_module, captured
+
+    def test_set_for_gpt_oss_models_only(self, monkeypatch):
+        from app.config import config
+
+        monkeypatch.setattr(config, "REASONING_EFFORT", "low")
+        agent_module, captured = self._install_fake(monkeypatch, supports_field=True)
+
+        agent_module._make_client("openai/gpt-oss-20b", 0.2)
+        assert captured["reasoning_effort"] == "low"
+        assert "model_kwargs" not in captured
+
+        captured.clear()
+        agent_module._make_client("groq/openai/gpt-oss-120b", 0.2)
+        assert captured["reasoning_effort"] == "low"
+
+        for other in ("qwen/qwen3.8-27b", "llama-3.3-70b-versatile"):
+            captured.clear()
+            agent_module._make_client(other, 0.2)
+            assert "reasoning_effort" not in captured
+            assert "model_kwargs" not in captured
+
+    def test_falls_back_to_model_kwargs_on_old_langchain_groq(self, monkeypatch):
+        from app.config import config
+
+        monkeypatch.setattr(config, "REASONING_EFFORT", "medium")
+        agent_module, captured = self._install_fake(monkeypatch, supports_field=False)
+        agent_module._make_client("openai/gpt-oss-20b", 0.2)
+        assert captured["model_kwargs"] == {"reasoning_effort": "medium"}
+        assert "reasoning_effort" not in captured
+
+    def test_empty_setting_disables_it(self, monkeypatch):
+        from app.config import config
+
+        monkeypatch.setattr(config, "REASONING_EFFORT", "")
+        agent_module, captured = self._install_fake(monkeypatch, supports_field=True)
+        agent_module._make_client("openai/gpt-oss-20b", 0.2)
+        assert "reasoning_effort" not in captured
+        assert "model_kwargs" not in captured
+
+    def test_config_default_and_validation(self, monkeypatch):
+        import importlib
+
+        config_module = importlib.import_module("app.config")
+
+        monkeypatch.delenv("REASONING_EFFORT", raising=False)
+        assert config_module._reasoning_effort() == "low"
+        monkeypatch.setenv("REASONING_EFFORT", " HIGH ")
+        assert config_module._reasoning_effort() == "high"
+        monkeypatch.setenv("REASONING_EFFORT", "")
+        assert config_module._reasoning_effort() == ""
+        monkeypatch.setenv("REASONING_EFFORT", "turbo")
+        assert config_module._reasoning_effort() == "low"

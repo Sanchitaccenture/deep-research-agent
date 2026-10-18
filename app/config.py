@@ -16,6 +16,12 @@ def _bool(name: str, default: str = "false") -> bool:
     return os.getenv(name, default).lower() in ("1", "true", "yes", "on")
 
 
+def _reasoning_effort() -> str:
+    """GPT-OSS reasoning effort: low | medium | high; "" disables; invalid -> low."""
+    value = os.getenv("REASONING_EFFORT", "low").strip().lower()
+    return value if value in ("", "low", "medium", "high") else "low"
+
+
 class Config:
     # --- Required keys ---
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
@@ -38,6 +44,7 @@ class Config:
     RESULTS_PER_SEARCH: int = int(os.getenv("RESULTS_PER_SEARCH", "4"))
     MAX_ROUNDS: int = int(os.getenv("MAX_ROUNDS", "3"))
     SYNTH_CONTEXT_CHARS: int = int(os.getenv("SYNTH_CONTEXT_CHARS", "12000"))
+    REASONING_EFFORT: str = _reasoning_effort()
 
     # --- RAG ---
     EMBEDDING_MODEL: str = os.getenv(
