@@ -37,6 +37,7 @@ class Config:
     MAX_SUBQUESTIONS: int = int(os.getenv("MAX_SUBQUESTIONS", "4"))
     RESULTS_PER_SEARCH: int = int(os.getenv("RESULTS_PER_SEARCH", "4"))
     MAX_ROUNDS: int = int(os.getenv("MAX_ROUNDS", "3"))
+    SYNTH_CONTEXT_CHARS: int = int(os.getenv("SYNTH_CONTEXT_CHARS", "12000"))
 
     # --- RAG ---
     EMBEDDING_MODEL: str = os.getenv(

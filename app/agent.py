@@ -197,10 +197,12 @@ def _stream_with_fallback(prompt: str, temperature: float = 0.2):
     fails, transparently fall over to the next model."""
     last_exc: Optional[BaseException] = None
     for model in _model_chain():
+        started = False
         try:
             client = _make_client(model, temperature)
             gen = client.stream(prompt)
             first = next(gen)  # force at least one chunk to detect rate limits
+            started = True
             yield first
             for chunk in gen:
                 yield chunk
@@ -208,6 +210,16 @@ def _stream_with_fallback(prompt: str, temperature: float = 0.2):
         except StopIteration:
             return
         except Exception as exc:  # noqa: BLE001
+            if started:
+                # Text already reached the caller; restarting on another model
+                # would duplicate it. Surface the failure so it can be continued.
+                telemetry.emit(
+                    "llm.stream_midflight_error",
+                    level="warning",
+                    model=model,
+                    error=str(exc)[:200],
+                )
+                raise
             last_exc = exc
             telemetry.emit(
                 "llm.stream_fallback",
@@ -456,17 +468,34 @@ def _salvage_report(question: str, sources: List[Dict[str, Any]], exc: BaseExcep
     return "\n".join(lines).strip()
 
 
+MAX_SOURCE_CHARS_EACH = 1200
+MIN_SOURCE_CHARS_EACH = 100
+CUT_OFF_NOTE = "\n\n_The report was cut off. Re-run, or ask in Chat._"
+
+
+def _format_sources_block(sources: List[Dict[str, Any]], budget: int) -> str:
+    """Numbered sources with the content budget split evenly; ids are preserved."""
+    if not sources:
+        return ""
+    headers = [
+        f"[{s['id']}] ({s.get('source_type','web')}) {s['title']} ({s['url']})\n"
+        for s in sources
+    ]
+    overhead = sum(len(h) + 2 for h in headers)
+    per_source = (budget - overhead) // len(sources)
+    per_source = max(MIN_SOURCE_CHARS_EACH, min(MAX_SOURCE_CHARS_EACH, per_source))
+    return "\n\n".join(
+        f"{h}{s['content'][:per_source]}" for h, s in zip(headers, sources)
+    )
+
+
 def _build_synthesis_prompt(state: ResearchState) -> str:
     question = state["question"]
     sources = state["sources"]
     template_key = state.get("template") or DEFAULT_TEMPLATE
     template_prompt = TEMPLATES.get(template_key, TEMPLATES[DEFAULT_TEMPLATE])
 
-    source_block = "\n\n".join(
-        f"[{s['id']}] ({s.get('source_type','web')}) {s['title']} ({s['url']})\n"
-        f"{s['content'][:1200]}"
-        for s in sources
-    )
+    source_block = _format_sources_block(sources, config.SYNTH_CONTEXT_CHARS)
 
     return (
         "You are a senior research analyst. Using ONLY the numbered sources below, "
@@ -478,6 +507,38 @@ def _build_synthesis_prompt(state: ResearchState) -> str:
         f"Question: {question}\n\n"
         f"Sources:\n{source_block}"
     )
+
+
+def _finish_reason(msg: Any) -> str:
+    meta = getattr(msg, "response_metadata", None) or {}
+    return str(meta.get("finish_reason") or "")
+
+
+def _model_name(msg: Any) -> str:
+    meta = getattr(msg, "response_metadata", None) or {}
+    return str(meta.get("model_name") or "unknown")
+
+
+def _complete_report(state: ResearchState, partial: str) -> str:
+    """One blocking call (through the fallback chain) that continues a cut-off report."""
+    template_key = state.get("template") or DEFAULT_TEMPLATE
+    template_prompt = TEMPLATES.get(template_key, TEMPLATES[DEFAULT_TEMPLATE])
+    sources_block = _format_sources_block(state["sources"], config.SYNTH_CONTEXT_CHARS)
+    prompt = (
+        "You are a senior research analyst. A report was cut off mid-way. "
+        "Continue it EXACTLY where the text stops: do not repeat anything already "
+        "written, do not restart, and do not add a preamble. Finish every remaining "
+        "section of the template, including the sources list. Use ONLY the numbered "
+        "sources below.\n\n"
+        f"Template rules:\n{template_prompt}\n\n"
+        f"Question: {state['question']}\n\n"
+        f"Sources:\n{sources_block}\n\n"
+        f"Report so far (continue right after the last character):\n{partial[-8000:]}"
+    )
+    continuation = _content(_llm(temperature=0.2).invoke(prompt)).rstrip()
+    if not continuation.strip():
+        raise RuntimeError("empty continuation")
+    return continuation
 
 
 # --------------------------------------------------------------------------
@@ -499,7 +560,22 @@ def synthesize_node(state: ResearchState) -> Dict[str, Any]:
         return {"report": report, "steps": steps + ["No sources to synthesize."]}
 
     prompt = _build_synthesis_prompt(state)
-    report = _content(_llm(temperature=0.2).invoke(prompt)).strip()
+    response = _llm(temperature=0.2).invoke(prompt)
+    report = _content(response).strip()
+    if _finish_reason(response) == "length":
+        telemetry.emit(
+            "llm.stream_midflight_error",
+            level="warning",
+            model=_model_name(response),
+            error="finish_reason=length",
+        )
+        try:
+            report += _complete_report(state, report)
+            steps.append("Report hit the token limit; continued with a follow-up call.")
+        except Exception as exc:  # noqa: BLE001
+            telemetry.emit("llm.continuation_failed", level="warning", error=str(exc)[:200])
+            report += CUT_OFF_NOTE
+            steps.append("Report was cut off and could not be continued.")
     steps.append(
         f"Synthesized {len(report)} chars from {len(sources)} sources "
         f"over {state['round']} round(s)."
@@ -824,19 +900,31 @@ def stream_research(
         yield {"steps": [f"Streaming synthesis (template: {template_key})…"]}
         prompt = _build_synthesis_prompt(state)  # type: ignore[arg-type]
         parts: List[str] = []
+        truncated = ""
         try:
             for chunk in _llm(temperature=0.2).stream(prompt):
                 delta = _content(chunk)
                 if delta:
                     parts.append(delta)
                     yield {"report_delta": delta}
+                if _finish_reason(chunk) == "length":
+                    truncated = "finish_reason=length"
+                    telemetry.emit(
+                        "llm.stream_midflight_error",
+                        level="warning",
+                        model=_model_name(chunk),
+                        error=truncated,
+                    )
         except Exception as exc:  # noqa: BLE001
             # Fallback to a blocking call if streaming fails mid-flight.
             if not parts:
                 try:
-                    full = _content(_llm(temperature=0.2).invoke(prompt)).strip()
+                    response = _llm(temperature=0.2).invoke(prompt)
+                    full = _content(response).strip()
                     parts = [full]
                     yield {"report_delta": full}
+                    if _finish_reason(response) == "length":
+                        truncated = "finish_reason=length"
                 except Exception as exc2:  # noqa: BLE001
                     # Every model was exhausted. Degrade gracefully: emit a
                     # source-only report so the run isn't a total loss.
@@ -851,7 +939,21 @@ def stream_research(
                     }
                     return
             else:
-                yield {"steps": [f"Streaming ended early ({exc.__class__.__name__}); using partial."]}
+                truncated = exc.__class__.__name__
+                yield {"steps": [f"Streaming ended early ({truncated}); trying to finish the report."]}
+        if truncated:
+            try:
+                continuation = _complete_report(state, "".join(parts))  # type: ignore[arg-type]
+                parts.append(continuation)
+                yield {"report_delta": continuation}
+                yield {"steps": ["Report was cut off; continued with a follow-up call."]}
+            except Exception as exc3:  # noqa: BLE001
+                telemetry.emit(
+                    "llm.continuation_failed", level="warning", error=str(exc3)[:200]
+                )
+                parts.append(CUT_OFF_NOTE)
+                yield {"report_delta": CUT_OFF_NOTE}
+                yield {"steps": ["Report was cut off and could not be continued."]}
         report = "".join(parts).strip()
         state["report"] = report
         yield {
