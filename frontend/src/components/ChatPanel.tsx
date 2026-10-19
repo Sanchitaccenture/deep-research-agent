@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm'
 import MicButton from './MicButton'
 import { useToast } from './Toast'
 import { useChat } from '../hooks/useChat'
+import { sanitizeTitle } from '../lib/citations'
 import type { ChatTurn, Source } from '../types'
 
 interface Props {
@@ -200,7 +201,7 @@ function enrichCitations(md: string, sources: Source[]): string {
     const s = sources.find((x) => x.id === id)
     if (!s) return match
     const url = s.url || '#'
-    return `[${n}](${url} "${(s.title || '').replace(/"/g, "'")}")`
+    return `[${n}](${url} "${sanitizeTitle(s.title)}")`
   })
 }
 

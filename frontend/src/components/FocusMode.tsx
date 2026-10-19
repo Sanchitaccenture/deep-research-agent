@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { sanitizeTitle } from '../lib/citations'
 import type { Source } from '../types'
 
 interface Props {
@@ -138,6 +139,6 @@ function enrichCitations(md: string, sources: Source[]): string {
     if (!s) return match
     const label = s.source_type === 'document' ? 'D' : ''
     const url = s.url || '#'
-    return `[${label}${n}](${url} "${(s.title || '').replace(/"/g, "'")}")`
+    return `[${label}${n}](${url} "${sanitizeTitle(s.title)}")`
   })
 }
