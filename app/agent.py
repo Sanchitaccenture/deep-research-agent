@@ -18,7 +18,9 @@ Two graphs:
 from __future__ import annotations
 
 import json
+import re
 import time
+from datetime import date
 from typing import Any, Dict, Generator, List, Optional, TypedDict, cast
 
 from langgraph.graph import END, StateGraph
@@ -80,6 +82,12 @@ TEMPLATES: Dict[str, str] = {
         "## Sources — numbered list of title + URL."
     ),
 }
+
+_HEADING_RULE = (
+    "Use exactly these headings, text before the dash only (omit the dash and "
+    "the description)."
+)
+TEMPLATES = {key: f"{text}\n{_HEADING_RULE}" for key, text in TEMPLATES.items()}
 
 DEFAULT_TEMPLATE = "default"
 
@@ -511,6 +519,7 @@ def _build_synthesis_prompt(state: ResearchState) -> str:
     return (
         "You are a senior research analyst. Using ONLY the numbered sources below, "
         "write a report answering the question.\n\n"
+        f"Today's date is {date.today().isoformat()}.\n\n"
         f"Template rules:\n{template_prompt}\n\n"
         "Additional rules:\n"
         "- Do not invent facts. If the sources don't cover something, say so.\n"
@@ -520,7 +529,12 @@ def _build_synthesis_prompt(state: ResearchState) -> str:
         "'using' or 'adopting'). If a statistic's meaning is unclear, quote the "
         "figure with the source's own wording.\n"
         "- Never use placeholders such as '??' or 'TBD'. If a date or number isn't "
-        "given, write 'date not stated' or omit the row.\n\n"
+        "given, write 'date not stated' or omit the row.\n"
+        "- If the sources look older than six months or may predate a recent "
+        "amendment or decision on this topic, add one short line under the "
+        "Overview: 'Currency note: sources may be outdated; verify recent "
+        "changes.' Never present a future date as settled if sources disagree; "
+        "say they conflict.\n\n"
         f"Question: {question}\n\n"
         f"Sources:\n{source_block}"
     )
@@ -647,6 +661,30 @@ def enrich_node(state: ResearchState) -> Dict[str, Any]:
     }
 
 
+_MINDMAP_UNSAFE = re.compile(r"[()\[\]{}\"'`:;#<>|&]")
+_MINDMAP_ROOT = re.compile(r"\s*root\(\(.*\)\)\s*$")
+
+
+def _sanitize_mindmap(raw: str) -> str:
+    """Strip characters that break Mermaid mindmap labels. The first line and
+    the root((...)) line are kept intact; other lines keep their indentation."""
+    out: List[str] = []
+    root_seen = False
+    for i, line in enumerate(raw.splitlines()):
+        if i == 0:
+            out.append(line.strip())
+            continue
+        if not root_seen and _MINDMAP_ROOT.match(line):
+            root_seen = True
+            out.append(line.rstrip())
+            continue
+        indent = line[: len(line) - len(line.lstrip())]
+        label = re.sub(r" {2,}", " ", _MINDMAP_UNSAFE.sub("", line)).strip()
+        if label:
+            out.append(indent + label)
+    return "\n".join(out)
+
+
 def _generate_diagram(question: str, report: str) -> str:
     prompt = (
         "Given a research report, produce a compact Mermaid mindmap that "
@@ -664,9 +702,9 @@ def _generate_diagram(question: str, report: str) -> str:
     except Exception:
         return ""
     raw = _strip_fences(raw)
-    if not raw.lower().startswith("mindmap"):
+    if not re.match(r"mindmap(\s|$)", raw):
         return ""
-    return raw
+    return _sanitize_mindmap(raw)
 
 
 def _generate_followups(question: str, report: str) -> List[str]:

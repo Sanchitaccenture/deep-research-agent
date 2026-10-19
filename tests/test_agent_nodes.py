@@ -262,3 +262,36 @@ class TestReasoningEffort:
         assert config_module._reasoning_effort() == ""
         monkeypatch.setenv("REASONING_EFFORT", "turbo")
         assert config_module._reasoning_effort() == "low"
+
+
+class TestMindmapSanitizing:
+    RAW = (
+        "mindmap\n"
+        "  root((EU AI Act (2024)))\n"
+        "    Timeline\n"
+        "      2027 Article 6(1) applies Full\n"
+        "      \"Quoted\" <b>bold</b>  &  more: stuff; #tag\n"
+        "      ()\n"
+    )
+
+    def test_labels_are_sanitized_and_structure_kept(self, fake_llm):
+        from app.agent import _generate_diagram
+
+        fake_llm.append(self.RAW)
+        out = _generate_diagram("q", "report")
+        lines = out.split("\n")
+        assert lines[0] == "mindmap"
+        assert lines[1] == "  root((EU AI Act (2024)))"
+        assert "      2027 Article 61 applies Full" in lines
+        assert "      Quoted bbold/b more stuff tag" in lines
+        assert "    Timeline" in lines
+        assert all(line.strip() for line in lines)  # emptied lines dropped
+        assert not any(c in "".join(lines[2:]) for c in "()[]{}\"'`:;#<>|&")
+
+    def test_fenced_output_still_works_and_non_mindmap_is_discarded(self, fake_llm):
+        from app.agent import _generate_diagram
+
+        fake_llm.append("```mermaid\nmindmap\n  root((T))\n    A (b)\n```")
+        assert _generate_diagram("q", "r") == "mindmap\n  root((T))\n    A b"
+        fake_llm.append("graph TD; a-->b")
+        assert _generate_diagram("q", "r") == ""

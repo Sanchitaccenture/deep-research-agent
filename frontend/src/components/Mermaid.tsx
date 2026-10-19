@@ -18,7 +18,7 @@ function initMermaid() {
       tertiaryColor: '#111826',
       fontFamily: 'Inter, system-ui, sans-serif',
     },
-    securityLevel: 'loose',
+    securityLevel: 'strict',
   })
   initialized = true
 }
@@ -40,21 +40,27 @@ export default function Mermaid({ chart, className }: Props) {
     let cancelled = false
     const id = `mmd-${Math.random().toString(36).slice(2, 10)}`
 
-    mermaid
-      .render(id, chart)
-      .then((result) => {
+    const run = async () => {
+      try {
+        const valid = await mermaid.parse(chart, { suppressErrors: true })
+        if (!valid) throw new Error('invalid diagram syntax')
+        const result = await mermaid.render(id, chart)
         if (!cancelled) {
           setSvg(result.svg)
           setError(null)
         }
-      })
-      .catch((err) => {
+      } catch (err) {
+        // Mermaid can leave its own error markup in the page; remove it.
+        document.getElementById(`d${id}`)?.remove()
+        document.getElementById(id)?.remove()
         if (!cancelled) {
           console.warn('mermaid render failed', err)
-          setError(err?.message || 'diagram render failed')
+          setError(err instanceof Error ? err.message : 'diagram render failed')
           setSvg('')
         }
-      })
+      }
+    }
+    void run()
 
     return () => {
       cancelled = true
@@ -62,11 +68,7 @@ export default function Mermaid({ chart, className }: Props) {
   }, [chart])
 
   if (error) {
-    return (
-      <div className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-3 text-xs text-rose-300">
-        Diagram failed to render: {error}
-      </div>
-    )
+    return <p className="text-xs text-slate-500">Mind map unavailable.</p>
   }
 
   return (
