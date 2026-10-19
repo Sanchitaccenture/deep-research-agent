@@ -518,7 +518,9 @@ def _build_synthesis_prompt(state: ResearchState) -> str:
         "- State statistics, percentages and dates exactly as the source words "
         "them. Do not generalize them (for example do not turn 'developing' into "
         "'using' or 'adopting'). If a statistic's meaning is unclear, quote the "
-        "figure with the source's own wording.\n\n"
+        "figure with the source's own wording.\n"
+        "- Never use placeholders such as '??' or 'TBD'. If a date or number isn't "
+        "given, write 'date not stated' or omit the row.\n\n"
         f"Question: {question}\n\n"
         f"Sources:\n{source_block}"
     )
