@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import contextvars
 import json
+from datetime import date
 import threading
 import time
 
@@ -114,11 +115,8 @@ class TestSynthesisPromptRules:
         }
         return _build_synthesis_prompt(state)
 
-    def test_currency_note_is_limited_to_fast_changing_topics(self):
-        p = self._prompt()
-        assert "ONLY for fast-changing" in p
-        assert "law and regulation, prices, markets, news, elections" in p
-        assert "Do NOT add it for stable explainers or general pros/cons" in p
+    def test_prompt_no_longer_asks_the_model_for_a_currency_note(self):
+        assert "Currency note" not in self._prompt()
 
     def test_sources_and_date_conflict_rules(self):
         p = self._prompt()
@@ -249,3 +247,86 @@ class TestPerRunScoping:
         assert starts[0]["template"] == "executive"
         assert starts[0]["question_length"] == len("What is RAG?")
         assert starts[0]["run_id"]
+
+
+# ------------------------------------------------------- currency note
+NOTE = "Currency note: sources may be outdated; verify recent changes."
+THIS_YEAR = str(date.today().year)
+
+
+def _synth_state(question, content):
+    from app.agent import _initial_state
+
+    return {
+        **_initial_state(question, "default"),
+        "sources": [{"id": 1, "title": "S", "url": "https://x.test", "content": content}],
+        "round": 1,
+    }
+
+
+class TestCurrencyNote:
+    REPORT = "## Overview\nFirst paragraph [1].\nStill the first paragraph.\n\n## Findings\n- a [1]"
+
+    def test_stable_question_gets_no_note(self, fake_llm):
+        from app.agent import synthesize_node
+
+        fake_llm.append(self.REPORT)
+        out = synthesize_node(_synth_state("How does photosynthesis work?", f"Notes {THIS_YEAR}"))
+        assert "Currency note" not in out["report"]
+
+    def test_law_question_gets_note_under_first_paragraph(self, fake_llm):
+        from app.agent import synthesize_node
+
+        fake_llm.append(self.REPORT)
+        out = synthesize_node(
+            _synth_state("What does the EU AI Act require?", f"Notes {THIS_YEAR}")
+        )
+        lines = out["report"].split("\n")
+        assert lines.count(NOTE) == 1
+        i = lines.index(NOTE)
+        assert lines[i - 1] == "" and lines[i - 2] == "Still the first paragraph."
+        assert lines[i + 1] == "" and lines[i + 2] == "## Findings"
+
+    def test_note_added_when_no_source_mentions_a_recent_year(self, fake_llm):
+        from app.agent import synthesize_node
+
+        fake_llm.append(self.REPORT)
+        out = synthesize_node(
+            _synth_state("How does photosynthesis work?", "Published in 2019.")
+        )
+        assert NOTE in out["report"]
+
+    def test_model_written_note_is_stripped(self, fake_llm):
+        from app.agent import synthesize_node
+
+        fake_llm.append(
+            "## Overview\nText [1].\nCurrency note: sources may be outdated.\n\n"
+            "**Currency note:** again\n\n## Findings\n- a [1]"
+        )
+        out = synthesize_node(_synth_state("How does photosynthesis work?", f"Notes {THIS_YEAR}"))
+        assert "Currency note" not in out["report"]
+        assert "## Findings" in out["report"]
+
+    def test_keywords_match_whole_words_only(self):
+        from app.agent import _needs_currency_note
+
+        fresh = [{"content": f"{THIS_YEAR}"}]
+        assert not _needs_currency_note("How do I practice piano in an urban flat?", fresh)
+        assert _needs_currency_note("What are the latest GPU prices?", fresh)
+        assert _needs_currency_note("Did the ban pass this week?", fresh)
+
+    def test_streaming_path_applies_the_note_too(
+        self, fake_llm, fake_tavily, tavily_result_factory
+    ):
+        from app.agent import stream_research
+
+        def run(question):
+            fake_tavily({"*": [tavily_result_factory(content=f"Updated {THIS_YEAR}")]})
+            fake_llm.extend([
+                json.dumps(["a", "b"]), self.REPORT, "mindmap\n  root((t))",
+                json.dumps(["c?"]), json.dumps(["t"]),
+            ])
+            return [u["report"] for u in stream_research(question) if "report" in u][-1]
+
+        assert NOTE in run("What is the latest on the EU AI Act?")
+        assert "Currency note" not in run("How does photosynthesis work?")

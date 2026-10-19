@@ -5,6 +5,7 @@ scripted fake: each call (invoke or stream) consumes the next script item.
 from __future__ import annotations
 
 import json
+from datetime import date
 
 import pytest
 
@@ -97,7 +98,7 @@ def events(monkeypatch):
 
 
 def _run(script, fake_tavily, tavily_result_factory, synth_items):
-    fake_tavily({"*": [tavily_result_factory()]})
+    fake_tavily({"*": [tavily_result_factory(content=f"Updated {date.today().year} guidance")]})
     script.extend(
         [json.dumps(["x", "y"]), *synth_items, "mindmap\n  root((t))", json.dumps(["c?"]), json.dumps(["t"])]
     )
@@ -155,7 +156,7 @@ class TestMidflightRecovery:
 
         state = {
             **_initial_state("Q", "default"),
-            "sources": [{"id": 1, "title": "S", "url": "https://x", "content": "body"}],
+            "sources": [{"id": 1, "title": "S", "url": "https://x", "content": f"body {date.today().year}"}],
             "round": 1,
         }
         script.extend([Length(PARTIAL), CONTINUATION])

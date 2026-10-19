@@ -570,12 +570,6 @@ def _build_synthesis_prompt(state: ResearchState) -> str:
         "figure with the source's own wording.\n"
         "- Never use placeholders such as '??' or 'TBD'. If a date or number isn't "
         "given, write 'date not stated' or omit the row.\n"
-        "- Add the line 'Currency note: sources may be outdated; verify recent "
-        "changes.' as one short line under the Overview ONLY for fast-changing "
-        "topics (law and regulation, prices, markets, news, elections, software "
-        "versions, sports) or when the newest source is more than six months "
-        "older than today's date. Do NOT add it for stable explainers or general "
-        "pros/cons.\n"
         "- Never present a future date as settled if sources disagree; say they "
         "conflict.\n"
         "- When sources disagree about a date, prefer the newest source, say "
@@ -586,6 +580,45 @@ def _build_synthesis_prompt(state: ResearchState) -> str:
         f"Question: {question}\n\n"
         f"Sources:\n{source_block}"
     )
+
+
+CURRENCY_NOTE = "Currency note: sources may be outdated; verify recent changes."
+FAST_CHANGING_KEYWORDS = (
+    "law", "regulation", "act", "ban", "price", "stock", "market", "election",
+    "news", "latest", "today", "this week", "2026", "2027", "version", "release",
+    "score",
+)
+_FAST_CHANGING_RE = re.compile(
+    r"\b(?:" + "|".join(re.escape(k) for k in FAST_CHANGING_KEYWORDS) + r")(?:s|es)?\b",
+    re.IGNORECASE,
+)
+_NOTE_LINE_RE = re.compile(r"\s*[*_>]*\s*Currency note:", re.IGNORECASE)
+
+
+def _needs_currency_note(question: str, sources: List[Dict[str, Any]]) -> bool:
+    if _FAST_CHANGING_RE.search(question or ""):
+        return True
+    this_year = date.today().year
+    recent = re.compile(rf"\b({this_year}|{this_year - 1})\b")
+    return not any(recent.search(str(s.get("content") or "")) for s in sources)
+
+
+def _apply_currency_note(report: str, question: str, sources: List[Dict[str, Any]]) -> str:
+    """Strip any model-written currency note, then add ours deterministically
+    right under the first paragraph when the topic is fast-changing or the
+    sources show no recent year."""
+    lines = [ln for ln in report.split("\n") if not _NOTE_LINE_RE.match(ln)]
+    if not _needs_currency_note(question, sources):
+        return "\n".join(lines).strip()
+    i = 0
+    while i < len(lines) and (not lines[i].strip() or lines[i].lstrip().startswith("#")):
+        i += 1
+    if i >= len(lines):
+        return "\n".join(lines + ["", CURRENCY_NOTE]).strip()
+    while i < len(lines) and lines[i].strip():
+        i += 1
+    lines[i:i] = ["", CURRENCY_NOTE]
+    return "\n".join(lines).strip()
 
 
 def _finish_reason(msg: Any) -> str:
@@ -655,6 +688,7 @@ def synthesize_node(state: ResearchState) -> Dict[str, Any]:
             telemetry.emit("llm.continuation_failed", level="warning", error=str(exc)[:200])
             report += CUT_OFF_NOTE
             steps.append("Report was cut off and could not be continued.")
+    report = _apply_currency_note(report, state["question"], sources)
     steps.append(
         f"Synthesized {len(report)} chars from {len(sources)} sources "
         f"over {state['round']} round(s)."
@@ -1069,7 +1103,7 @@ def _stream_research(
                 parts.append(CUT_OFF_NOTE)
                 yield {"report_delta": CUT_OFF_NOTE}
                 yield {"steps": ["Report was cut off and could not be continued."]}
-        report = "".join(parts).strip()
+        report = _apply_currency_note("".join(parts).strip(), question, sources)
         state["report"] = report
         yield {
             "steps": [
