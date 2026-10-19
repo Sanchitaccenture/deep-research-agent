@@ -17,7 +17,10 @@ export default function MicButton({
 
   if (!voice.supported) return null
 
-  const dim = size === 'md' ? 'h-9 w-9' : 'h-7 w-7'
+  const dim =
+    size === 'md'
+      ? 'h-9 w-9 max-lg:h-10 max-lg:w-10'
+      : 'h-7 w-7 max-lg:h-10 max-lg:w-10'
   const icon = size === 'md' ? 'h-4 w-4' : 'h-3.5 w-3.5'
 
   return (

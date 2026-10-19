@@ -75,7 +75,7 @@ export default function Mermaid({ chart, className }: Props) {
     <div
       ref={ref}
       className={
-        'flex justify-center overflow-x-auto rounded-xl border border-white/5 bg-surface-950/40 p-4 ' +
+        'flex max-w-full overflow-x-auto rounded-xl border border-white/5 bg-surface-950/40 p-4 [&>svg]:m-auto max-lg:[&>svg]:min-w-[560px] ' +
         (className || '')
       }
       dangerouslySetInnerHTML={{ __html: svg }}

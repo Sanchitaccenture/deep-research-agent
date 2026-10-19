@@ -32,6 +32,7 @@ export default function App() {
   const [showPalette, setShowPalette] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [view, setView] = useState<View>('dashboard')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const refreshMeta = useCallback(async () => {
     try {
@@ -177,6 +178,7 @@ export default function App() {
         setShowPalette(false)
         setShowSettings(false)
         setShowShortcuts(false)
+        setSidebarOpen(false)
       },
       ignoreInInputs: false,
     },
@@ -185,13 +187,27 @@ export default function App() {
   return (
     <ErrorBoundary>
     <ToastProvider>
-    <div className="flex h-screen w-screen text-slate-200">
+    <div className="flex h-screen w-screen overflow-x-hidden text-slate-200 max-lg:h-dvh">
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/60 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
       <Sidebar
+        open={sidebarOpen}
         sessions={sessions}
         documents={documents}
         activeSessionId={research.state.sessionId}
-        onNew={onNewChat}
-        onSelect={onSelectSession}
+        onNew={() => {
+          setSidebarOpen(false)
+          onNewChat()
+        }}
+        onSelect={(id) => {
+          setSidebarOpen(false)
+          return onSelectSession(id)
+        }}
         onDelete={onDeleteSession}
         onUploaded={onUploaded}
         onDeleteDoc={async (id) => {
@@ -203,6 +219,7 @@ export default function App() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Header
           status={status}
+          onOpenSidebar={() => setSidebarOpen(true)}
           onOpenSettings={() => setShowSettings(true)}
           onNew={onNewChat}
           onOpenPalette={() => setShowPalette(true)}

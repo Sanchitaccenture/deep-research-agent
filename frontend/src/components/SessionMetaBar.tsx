@@ -64,7 +64,7 @@ export default function SessionMetaBar({
         onClick={() => patch({ bookmarked: !local.bookmarked })}
         title={local.bookmarked ? 'Remove bookmark' : 'Bookmark this run'}
         className={
-          'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition ' +
+          'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition max-lg:min-h-10 max-lg:px-3 ' +
           (local.bookmarked
             ? 'bg-amber-500/15 text-amber-300'
             : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200')
@@ -81,7 +81,7 @@ export default function SessionMetaBar({
       {local.tags.length === 0 && !editing && (
         <button
           onClick={() => setEditing(true)}
-          className="rounded-md bg-white/5 px-2 py-1 text-xs text-slate-400 hover:bg-white/10 hover:text-slate-200"
+          className="rounded-md bg-white/5 px-2 py-1 text-xs text-slate-400 hover:bg-white/10 hover:text-slate-200 max-lg:min-h-10 max-lg:px-3"
         >
           + Add tag
         </button>
@@ -96,7 +96,7 @@ export default function SessionMetaBar({
           {t}
           <button
             onClick={() => removeTag(t)}
-            className="ml-1 text-slate-500 opacity-0 transition group-hover:opacity-100 hover:text-rose-400"
+            className="ml-1 text-slate-500 opacity-0 transition group-hover:opacity-100 hover:text-rose-400 max-lg:px-1.5 max-lg:opacity-100"
             aria-label={`Remove tag ${t}`}
           >
             ×
@@ -125,7 +125,7 @@ export default function SessionMetaBar({
           }}
           autoFocus={editing}
           placeholder={local.tags.length === 0 ? 'type & enter' : '+ tag'}
-          className="w-24 rounded-md bg-transparent px-1 py-0.5 text-[11px] text-slate-200 placeholder-slate-600 focus:outline-none"
+          className="w-24 rounded-md bg-transparent px-1 py-0.5 text-base text-slate-200 placeholder-slate-600 focus:outline-none max-lg:min-h-10 max-lg:w-32 lg:text-[11px]"
         />
       )}
     </div>

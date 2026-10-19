@@ -20,7 +20,7 @@ export default function TemplateSelector({ value, onChange, compact }: Props) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as ReportTemplate)}
-        className="rounded-md border border-white/10 bg-surface-800 px-2 py-1 text-xs text-slate-200 focus:border-accent-500 focus:outline-none"
+        className="rounded-md border border-white/10 bg-surface-800 px-2 py-1 text-xs text-slate-200 focus:border-accent-500 focus:outline-none max-lg:min-h-10 max-lg:text-base"
       >
         {ORDER.map((k) => (
           <option key={k} value={k}>
@@ -32,7 +32,7 @@ export default function TemplateSelector({ value, onChange, compact }: Props) {
   }
 
   return (
-    <div className="grid gap-2 md:grid-cols-5">
+    <div className="flex gap-2 overflow-x-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:grid md:grid-cols-5 md:overflow-visible">
       {ORDER.map((k) => {
         const meta = TEMPLATE_META[k]
         const active = value === k
@@ -42,7 +42,7 @@ export default function TemplateSelector({ value, onChange, compact }: Props) {
             type="button"
             onClick={() => onChange(k)}
             className={
-              'rounded-xl border p-2.5 text-left transition ' +
+              'w-40 shrink-0 rounded-xl border p-2.5 text-left transition max-md:min-h-10 md:w-auto md:shrink ' +
               (active
                 ? 'border-accent-500/40 bg-accent-500/10 shadow-lg shadow-accent-500/10'
                 : 'border-white/5 bg-white/[0.03] hover:border-white/10 hover:bg-white/5')

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../lib/api'
 import { useToast } from './Toast'
+import { useRevealOnMobile } from '../hooks/useRevealOnMobile'
 
 interface Props {
   sessionId: string
@@ -11,6 +12,8 @@ interface Props {
 export default function NotesPanel({ sessionId, initialNotes, onSaved }: Props) {
   const [notes, setNotes] = useState(initialNotes || '')
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const panelRef = useRef<HTMLDivElement>(null)
+  useRevealOnMobile(panelRef, true)
   const timerRef = useRef<number | null>(null)
   const lastSaved = useRef<string>(initialNotes || '')
   const toast = useToast()
@@ -53,7 +56,7 @@ export default function NotesPanel({ sessionId, initialNotes, onSaved }: Props) 
   }, [notes, sessionId])
 
   return (
-    <div className="glass flex h-[calc(100vh-260px)] flex-col rounded-2xl">
+    <div ref={panelRef} className="glass flex h-[calc(100vh-260px)] min-w-0 flex-col rounded-2xl max-lg:h-[calc(100dvh-220px)] max-lg:min-h-[420px]">
       <div className="flex items-center justify-between border-b border-white/5 px-4 py-2.5 text-xs text-slate-400">
         <div className="flex items-center gap-2">
           <IconPencil />
@@ -65,7 +68,7 @@ export default function NotesPanel({ sessionId, initialNotes, onSaved }: Props) 
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         placeholder="Add your own commentary, decisions, quotes, or TODOs. Markdown-friendly. Autosaves as you type."
-        className="min-h-0 flex-1 resize-none bg-transparent px-4 py-3 text-sm leading-relaxed text-slate-200 placeholder-slate-500 focus:outline-none"
+        className="min-h-0 flex-1 resize-none bg-transparent px-4 py-3 text-base leading-relaxed text-slate-200 placeholder-slate-500 focus:outline-none lg:text-sm"
       />
       <div className="flex items-center justify-between border-t border-white/5 px-4 py-2 text-[10px] text-slate-500">
         <span>{notes.length} chars</span>

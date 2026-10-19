@@ -96,7 +96,7 @@ export default function SourcesPanel({ sources }: Props) {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search titles, content, URLs, queries…"
-              className="w-full rounded-lg border border-white/5 bg-white/[0.03] py-1.5 pl-8 pr-2 text-xs text-white placeholder-slate-500 focus:border-accent-500/30 focus:outline-none"
+              className="w-full rounded-lg border border-white/5 bg-white/[0.03] py-1.5 pl-8 pr-2 text-base text-white placeholder-slate-500 focus:border-accent-500/30 focus:outline-none max-lg:min-h-10 lg:text-xs"
             />
           </div>
 
@@ -212,7 +212,7 @@ function FilterBtn({
     <button
       onClick={onClick}
       className={
-        'rounded-md px-2 py-1 text-[11px] font-medium transition ' +
+        'rounded-md px-2 py-1 text-[11px] font-medium transition max-lg:min-h-10 max-lg:px-3 ' +
         (active ? activeCls : 'text-slate-400 hover:bg-white/5 hover:text-slate-200')
       }
     >
@@ -256,7 +256,7 @@ function SourceCard({
   return (
     <div
       onClick={onToggle}
-      className="group glass cursor-pointer rounded-xl p-4 transition hover:border-white/20 hover:bg-white/[0.06]"
+      className="group glass min-w-0 cursor-pointer break-words rounded-xl p-3 transition hover:border-white/20 hover:bg-white/[0.06] sm:p-4"
     >
       <div className="mb-2 flex items-start gap-2.5">
         <span

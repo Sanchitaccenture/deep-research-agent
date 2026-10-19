@@ -4,7 +4,9 @@ import remarkGfm from 'remark-gfm'
 import MicButton from './MicButton'
 import { useToast } from './Toast'
 import { useChat } from '../hooks/useChat'
+import { useRevealOnMobile } from '../hooks/useRevealOnMobile'
 import { sanitizeTitle } from '../lib/citations'
+import { markdownComponents } from '../lib/markdown'
 import type { ChatTurn, Source } from '../types'
 
 interface Props {
@@ -25,6 +27,8 @@ export default function ChatPanel({
   const chat = useChat(initialTurns)
   const [input, setInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  useRevealOnMobile(panelRef, !!sessionId)
   const toast = useToast()
 
   useEffect(() => {
@@ -54,7 +58,7 @@ export default function ChatPanel({
   }
 
   return (
-    <div className="glass flex h-[calc(100vh-260px)] flex-col rounded-2xl">
+    <div ref={panelRef} className="glass flex h-[calc(100vh-260px)] min-w-0 flex-col rounded-2xl max-lg:h-[calc(100dvh-220px)] max-lg:min-h-[420px]">
       <div className="flex items-center justify-between border-b border-white/5 px-4 py-2.5">
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <span className="h-1.5 w-1.5 rounded-full bg-brand-500 animate-pulse-soft" />
@@ -70,7 +74,7 @@ export default function ChatPanel({
               chat.clear(sessionId)
               toast.push({ kind: 'info', message: 'Chat thread cleared' })
             }}
-            className="text-[11px] text-slate-500 hover:text-rose-400"
+            className="text-[11px] text-slate-500 hover:text-rose-400 max-lg:min-h-10 max-lg:px-2"
           >
             Clear thread
           </button>
@@ -134,7 +138,7 @@ export default function ChatPanel({
           rows={2}
           placeholder="Ask a follow-up about this research…"
           disabled={chat.state.streaming}
-          className="flex-1 resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-brand-500/40 focus:outline-none disabled:opacity-60"
+          className="min-w-0 flex-1 resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-base text-white placeholder-slate-500 focus:border-brand-500/40 focus:outline-none disabled:opacity-60 lg:text-sm"
         />
         <MicButton
           onTranscript={(text, isFinal) => {
@@ -144,7 +148,7 @@ export default function ChatPanel({
         <button
           type="submit"
           disabled={!input.trim() || chat.state.streaming}
-          className="rounded-lg bg-gradient-to-r from-brand-600 to-accent-600 px-4 py-2 text-sm font-medium text-white transition hover:from-brand-500 hover:to-accent-500 disabled:opacity-40"
+          className="rounded-lg bg-gradient-to-r from-brand-600 to-accent-600 px-4 py-2 text-sm font-medium text-white transition hover:from-brand-500 hover:to-accent-500 disabled:opacity-40 max-lg:min-h-10"
         >
           {chat.state.streaming ? '…' : 'Send'}
         </button>
@@ -173,7 +177,7 @@ function MessageBubble({
     >
       <div
         className={
-          'max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ' +
+          'max-w-[92%] break-words rounded-2xl px-4 py-2.5 text-sm leading-relaxed sm:max-w-[80%] ' +
           (isUser
             ? 'bg-gradient-to-br from-accent-600/30 to-brand-600/20 text-white'
             : 'border border-white/5 bg-surface-900/60 text-slate-200')
@@ -183,7 +187,9 @@ function MessageBubble({
           <div className="whitespace-pre-wrap">{enriched}</div>
         ) : (
           <div className="report-md text-[13.5px]">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{enriched}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+              {enriched}
+            </ReactMarkdown>
             {live && (
               <span className="ml-0.5 inline-block h-3.5 w-1 animate-pulse-soft bg-brand-400 align-middle" />
             )}

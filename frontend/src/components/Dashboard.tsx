@@ -48,7 +48,7 @@ export default function Dashboard({
   const bookmarked = sessions.filter((s) => s.bookmarked).slice(0, 4)
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-6 px-6 py-8">
+    <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-6 px-3 py-6 sm:px-6 sm:py-8">
       {/* Ask row */}
       <section className="animate-fade-in">
         <div className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-500">
@@ -104,7 +104,7 @@ export default function Dashboard({
               <button
                 type="submit"
                 disabled={!q.trim()}
-                className="rounded-lg bg-gradient-to-r from-accent-600 to-brand-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-brand-600/20 transition hover:from-accent-500 hover:to-brand-500 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg bg-gradient-to-r from-accent-600 to-brand-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-brand-600/20 transition hover:from-accent-500 hover:to-brand-500 disabled:cursor-not-allowed disabled:opacity-40 max-lg:min-h-10"
               >
                 Research →
               </button>

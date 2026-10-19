@@ -2,6 +2,7 @@ import type { StatusResponse } from '../types'
 
 interface Props {
   status: StatusResponse | null
+  onOpenSidebar: () => void
   onOpenSettings: () => void
   onNew: () => void
   onOpenPalette: () => void
@@ -10,15 +11,30 @@ interface Props {
 
 export default function Header({
   status,
+  onOpenSidebar,
   onOpenSettings,
   onNew,
   onOpenPalette,
   onOpenShortcuts,
 }: Props) {
   return (
-    <header className="flex items-center justify-between border-b border-white/5 bg-surface-900/60 px-6 py-3 backdrop-blur">
-      <div className="flex items-center gap-3">
-        <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-accent-500 to-brand-500 shadow-lg shadow-brand-600/20">
+    <header className="flex items-center justify-between gap-2 border-b border-white/5 bg-surface-900/60 px-3 py-2 backdrop-blur sm:px-6 sm:py-3">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        <button
+          onClick={onOpenSidebar}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/5 text-slate-300 transition hover:bg-white/10 lg:hidden"
+          aria-label="Open menu"
+        >
+          <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+            <path
+              d="M4 7h16M4 12h16M4 17h16"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+        <div className="hidden h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-accent-500 to-brand-500 shadow-lg shadow-brand-600/20 sm:grid">
           <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-white">
             <path
               d="M4 18 L10 8 L14 14 L20 6"
@@ -30,17 +46,17 @@ export default function Header({
             <circle cx="20" cy="6" r="1.8" fill="currentColor" />
           </svg>
         </div>
-        <div>
-          <h1 className="text-base font-semibold tracking-tight text-white">
+        <div className="min-w-0">
+          <h1 className="truncate text-base font-semibold tracking-tight text-white">
             Deep <span className="gradient-text">Research</span> Agent
           </h1>
-          <p className="text-[11px] text-slate-400">
+          <p className="hidden text-[11px] text-slate-400 sm:block">
             LangGraph · CrewAI · RAG · Groq · Tavily
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <button
           onClick={onOpenPalette}
           className="hidden items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-400 transition hover:bg-white/10 md:flex"
@@ -70,14 +86,14 @@ export default function Header({
         )}
         <button
           onClick={onNew}
-          className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-200 transition hover:bg-white/10"
+          className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-200 transition hover:bg-white/10 max-lg:min-h-10"
           title="New research (⌘N)"
         >
           + New
         </button>
         <button
           onClick={onOpenShortcuts}
-          className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-slate-300 transition hover:bg-white/10"
+          className="hidden rounded-lg border border-white/10 bg-white/5 p-1.5 text-slate-300 transition hover:bg-white/10 sm:block"
           aria-label="Keyboard shortcuts"
           title="Keyboard shortcuts (⌘/)"
         >
@@ -93,7 +109,7 @@ export default function Header({
         </button>
         <button
           onClick={onOpenSettings}
-          className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-slate-300 transition hover:bg-white/10"
+          className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-slate-300 transition hover:bg-white/10 max-lg:grid max-lg:h-10 max-lg:w-10 max-lg:place-items-center"
           aria-label="Settings"
           title="Settings (⌘,)"
         >

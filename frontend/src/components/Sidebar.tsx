@@ -11,6 +11,7 @@ interface Props {
   onDelete: (id: string) => void
   onUploaded: () => void
   onDeleteDoc: (id: string) => void
+  open?: boolean
 }
 
 type SessionFilter = 'all' | 'bookmarked' | 'notes'
@@ -24,6 +25,7 @@ export default function Sidebar({
   onDelete,
   onUploaded,
   onDeleteDoc,
+  open = false,
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -61,7 +63,13 @@ export default function Sidebar({
   }, [sessions, query, filter])
 
   return (
-    <aside className="flex w-72 flex-col border-r border-white/5 bg-surface-950/60 backdrop-blur">
+    <aside
+      className={
+        'fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] flex-col border-r border-white/5 bg-surface-950 shadow-2xl backdrop-blur transition-[transform,visibility] duration-200 ' +
+        'lg:static lg:z-auto lg:translate-x-0 lg:bg-surface-950/60 lg:shadow-none ' +
+        (open ? 'translate-x-0' : '-translate-x-full max-lg:invisible')
+      }
+    >
       <div className="border-b border-white/5 p-4">
         <button
           onClick={onNew}
@@ -102,7 +110,7 @@ export default function Sidebar({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search history…"
-              className="w-full rounded-lg border border-white/5 bg-white/[0.03] py-1.5 pl-7 pr-2 text-xs text-white placeholder-slate-500 focus:border-accent-500/30 focus:outline-none"
+              className="w-full rounded-lg border border-white/5 bg-white/[0.03] py-1.5 pl-7 pr-2 text-base text-white placeholder-slate-500 focus:border-accent-500/30 focus:outline-none max-lg:min-h-10 lg:text-xs"
             />
           </div>
           <div className="flex flex-wrap gap-1">
@@ -186,7 +194,7 @@ function TabButton({
     <button
       onClick={onClick}
       className={
-        'rounded-lg px-3 py-1.5 text-xs font-medium transition ' +
+        'rounded-lg px-3 py-1.5 text-xs font-medium transition max-lg:min-h-10 ' +
         (active
           ? 'bg-white/10 text-white'
           : 'text-slate-400 hover:bg-white/5 hover:text-slate-200')
@@ -218,7 +226,7 @@ function FilterChip({
     <button
       onClick={onClick}
       className={
-        'rounded-full px-2 py-0.5 text-[10px] transition ' +
+        'rounded-full px-2 py-0.5 text-[10px] transition max-lg:min-h-10 max-lg:px-3 ' +
         (active ? activeCls : 'bg-white/[0.04] text-slate-400 hover:bg-white/10')
       }
     >
@@ -251,7 +259,7 @@ function SessionsList({
           <button
             onClick={() => onSelect(s.id)}
             className={
-              'group flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left text-xs transition ' +
+              'group flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left text-xs transition max-lg:min-h-10 ' +
               (activeId === s.id
                 ? 'bg-white/10 text-white'
                 : 'text-slate-300 hover:bg-white/5')
@@ -294,7 +302,7 @@ function SessionsList({
                 e.stopPropagation()
                 onDelete(s.id)
               }}
-              className="mt-0.5 rounded p-1 text-slate-500 opacity-0 transition hover:bg-white/10 hover:text-rose-400 group-hover:opacity-100"
+              className="mt-0.5 rounded p-1 text-slate-500 opacity-0 transition hover:bg-white/10 hover:text-rose-400 group-hover:opacity-100 max-lg:p-2.5 max-lg:opacity-100"
               aria-label="Delete session"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
@@ -353,7 +361,7 @@ function DocumentsList({
           </div>
           <button
             onClick={() => onDelete(d.doc_id)}
-            className="rounded p-1 text-slate-500 opacity-0 transition hover:bg-white/10 hover:text-rose-400 group-hover:opacity-100"
+            className="rounded p-1 text-slate-500 opacity-0 transition hover:bg-white/10 hover:text-rose-400 group-hover:opacity-100 max-lg:p-2.5 max-lg:opacity-100"
             aria-label="Delete document"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">

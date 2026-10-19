@@ -34,7 +34,7 @@ export default function SearchPanel({
   }
 
   return (
-    <div className="mx-auto flex min-h-full max-w-3xl flex-col items-center justify-center px-6 py-10">
+    <div className="mx-auto flex min-h-full max-w-3xl flex-col items-center justify-center px-3 py-6 sm:px-6 sm:py-10">
       <div className="mb-8 text-center animate-fade-in">
         <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-wider text-slate-400">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-soft" />
@@ -85,7 +85,7 @@ export default function SearchPanel({
             <button
               type="submit"
               disabled={!q.trim()}
-              className="rounded-lg bg-gradient-to-r from-accent-600 to-brand-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-brand-600/20 transition hover:from-accent-500 hover:to-brand-500 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-lg bg-gradient-to-r from-accent-600 to-brand-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-brand-600/20 transition hover:from-accent-500 hover:to-brand-500 disabled:cursor-not-allowed disabled:opacity-40 max-lg:min-h-10"
             >
               Research →
             </button>

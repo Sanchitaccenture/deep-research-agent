@@ -131,6 +131,47 @@ body {
   font-weight: 600;
 }
 
+/* Report markdown on phones / small tablets (below lg; desktop unchanged) */
+@media (max-width: 1023.98px) {
+  .report-md {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  .report-md h1 {
+    font-size: 22px;
+  }
+  .report-md h2 {
+    font-size: 19px;
+  }
+  .report-md h3 {
+    font-size: 1.05rem;
+  }
+  .report-md p,
+  .report-md li,
+  .report-md h1,
+  .report-md h2,
+  .report-md h3,
+  .report-md blockquote,
+  .report-md a {
+    overflow-wrap: anywhere;
+  }
+  .report-md a[title] {
+    font-size: 0.8em;
+    margin: 0 0.12em;
+  }
+  .report-md table {
+    font-size: 0.85em;
+  }
+  .report-md th,
+  .report-md td {
+    padding: 0.4rem 0.6rem;
+    overflow-wrap: normal;
+  }
+  .report-md pre {
+    padding: 0.7rem 0.8rem;
+  }
+}
+
 /* Glass card */
 .glass {
   background: linear-gradient(180deg, rgba(17, 24, 38, 0.7), rgba(11, 15, 22, 0.55));

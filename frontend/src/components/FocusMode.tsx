@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { sanitizeTitle } from '../lib/citations'
+import { markdownComponents } from '../lib/markdown'
 import type { Source } from '../types'
 
 interface Props {
@@ -55,7 +56,7 @@ export default function FocusMode({ open, onClose, title, report, sources }: Pro
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-surface-950/98 backdrop-blur-xl animate-fade-in">
-      <header className="flex items-center justify-between border-b border-white/5 px-6 py-3">
+      <header className="flex items-center justify-between gap-2 border-b border-white/5 px-3 py-3 sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-accent-500 to-brand-500">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-white">
@@ -76,7 +77,7 @@ export default function FocusMode({ open, onClose, title, report, sources }: Pro
             <div className="truncate text-sm font-medium text-white">{title}</div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <div className="hidden items-center gap-1 rounded-lg border border-white/10 bg-white/5 p-1 md:flex">
             <FontBtn label="A-" active={false} onClick={() => bumpFont(-1)} />
             <span className="px-1 text-[10px] uppercase text-slate-500">{fontSize}</span>
@@ -84,7 +85,7 @@ export default function FocusMode({ open, onClose, title, report, sources }: Pro
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/10"
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/10 max-lg:min-h-10"
             title="Exit focus mode (Esc)"
           >
             Exit <kbd className="ml-1.5 text-[10px] text-slate-500">Esc</kbd>
@@ -93,12 +94,14 @@ export default function FocusMode({ open, onClose, title, report, sources }: Pro
       </header>
 
       <div className="flex-1 overflow-y-auto">
-        <article className={'report-md mx-auto max-w-3xl px-6 py-12 ' + sizeCls}>
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{enriched}</ReactMarkdown>
+        <article className={'report-md mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12 ' + sizeCls}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+            {enriched}
+          </ReactMarkdown>
         </article>
       </div>
 
-      <footer className="border-t border-white/5 px-6 py-2 text-center text-[10px] text-slate-600">
+      <footer className="hidden border-t border-white/5 px-6 py-2 text-center text-[10px] text-slate-600 lg:block">
         ← → to scroll · <kbd className="rounded bg-white/5 px-1">+</kbd>{' '}
         <kbd className="rounded bg-white/5 px-1">-</kbd> to resize ·{' '}
         <kbd className="rounded bg-white/5 px-1">Esc</kbd> to exit

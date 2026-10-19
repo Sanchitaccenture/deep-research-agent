@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ChatPanel from './ChatPanel'
 import MicButton from './MicButton'
 import NotesPanel from './NotesPanel'
@@ -97,15 +97,15 @@ export default function ResearchStage({
   const notes: string = state.notes
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col px-6 py-6">
+    <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col px-3 py-4 sm:px-6 sm:py-6">
       {/* Query bar */}
       <form onSubmit={submit} className="glass mb-3 rounded-2xl p-3">
-        <div className="flex items-start gap-3">
+        <div className="flex flex-wrap items-start gap-3 sm:flex-nowrap">
           <textarea
             value={q}
             onChange={(e) => setQ(e.target.value)}
             rows={2}
-            className="flex-1 resize-none bg-transparent px-2 py-1 text-sm text-white placeholder-slate-500 focus:outline-none"
+            className="min-w-0 flex-1 resize-none bg-transparent px-2 py-1 text-base text-white placeholder-slate-500 focus:outline-none max-sm:basis-full lg:text-sm"
             placeholder="Refine or ask a new question…"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit()
@@ -116,7 +116,7 @@ export default function ResearchStage({
               if (isFinal) setQ((prev) => (prev ? prev.trim() + ' ' + text : text))
             }}
           />
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col items-end gap-2 max-sm:ml-auto max-sm:flex-row max-sm:items-center">
             <div className="flex items-center gap-1.5">
               <TemplateSelector value={template} onChange={onTemplateChange} compact />
             </div>
@@ -124,7 +124,7 @@ export default function ResearchStage({
               <button
                 type="button"
                 onClick={onStop}
-                className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs text-rose-300 transition hover:bg-rose-500/20"
+                className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs text-rose-300 transition hover:bg-rose-500/20 max-lg:min-h-10"
               >
                 Stop
               </button>
@@ -132,7 +132,7 @@ export default function ResearchStage({
               <button
                 type="submit"
                 disabled={!q.trim()}
-                className="rounded-lg bg-gradient-to-r from-accent-600 to-brand-600 px-3 py-1.5 text-xs font-medium text-white transition hover:from-accent-500 hover:to-brand-500 disabled:opacity-40"
+                className="rounded-lg bg-gradient-to-r from-accent-600 to-brand-600 px-3 py-1.5 text-xs font-medium text-white transition hover:from-accent-500 hover:to-brand-500 disabled:opacity-40 max-lg:min-h-10"
               >
                 Run again →
               </button>
@@ -173,7 +173,7 @@ export default function ResearchStage({
             <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
               <button
                 onClick={() => onSubmit(q || question)}
-                className="rounded-md border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-rose-200 hover:bg-rose-500/20"
+                className="rounded-md border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-rose-200 hover:bg-rose-500/20 max-lg:min-h-10 max-lg:px-3"
               >
                 Retry
               </button>
@@ -181,7 +181,7 @@ export default function ResearchStage({
                 href="https://console.groq.com/settings/billing"
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-slate-300 hover:bg-white/10"
+                className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-slate-300 hover:bg-white/10 max-lg:inline-flex max-lg:min-h-10 max-lg:items-center max-lg:px-3"
               >
                 Groq usage & billing →
               </a>
@@ -191,7 +191,8 @@ export default function ResearchStage({
       )}
 
       {/* Tabs */}
-      <div className="mb-3 flex items-center gap-1 border-b border-white/5 pb-2">
+      <div className="mb-3 flex flex-col gap-2 border-b border-white/5 pb-2 lg:flex-row lg:items-center lg:gap-1">
+        <div className="flex min-w-0 items-center gap-1 max-lg:overflow-x-auto max-lg:[scrollbar-width:none] max-lg:[&::-webkit-scrollbar]:hidden">
         <Tab active={tab === 'report'} onClick={() => setTab('report')}>
           Report
           {state.running && !state.report && <Spinner />}
@@ -232,11 +233,12 @@ export default function ResearchStage({
             {state.steps.length}
           </span>
         </Tab>
-        <div className="ml-auto flex gap-2">
+        </div>
+        <div className="flex gap-2 max-lg:overflow-x-auto lg:ml-auto max-lg:[scrollbar-width:none] max-lg:[&::-webkit-scrollbar]:hidden">
           {state.sessionId && (
             <button
               onClick={copyLink}
-              className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300 hover:bg-white/10"
+              className="shrink-0 whitespace-nowrap rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300 hover:bg-white/10 max-lg:min-h-10 max-lg:px-3"
               title="Copy shareable link"
             >
               Share
@@ -246,13 +248,13 @@ export default function ResearchStage({
             <>
               <button
                 onClick={copyReport}
-                className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300 hover:bg-white/10"
+                className="shrink-0 whitespace-nowrap rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300 hover:bg-white/10 max-lg:min-h-10 max-lg:px-3"
               >
                 Copy
               </button>
               <button
                 onClick={exportReport}
-                className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300 hover:bg-white/10"
+                className="shrink-0 whitespace-nowrap rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300 hover:bg-white/10 max-lg:min-h-10 max-lg:px-3"
               >
                 Download .md
               </button>
@@ -260,7 +262,7 @@ export default function ResearchStage({
           )}
           <button
             onClick={onReset}
-            className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300 hover:bg-white/10"
+            className="shrink-0 whitespace-nowrap rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300 hover:bg-white/10 max-lg:min-h-10 max-lg:px-3"
           >
             Clear
           </button>
@@ -327,12 +329,17 @@ function Tab({
   onClick: () => void
   disabled?: boolean
 }) {
+  const ref = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (active) ref.current?.scrollIntoView({ inline: 'center', block: 'nearest' })
+  }, [active])
   return (
     <button
+      ref={ref}
       onClick={onClick}
       disabled={disabled}
       className={
-        'inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium transition ' +
+        'inline-flex shrink-0 items-center whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition max-lg:min-h-10 ' +
         (active
           ? 'bg-white/10 text-white'
           : 'text-slate-400 hover:bg-white/5 hover:text-slate-200') +

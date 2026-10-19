@@ -8,6 +8,7 @@ import SuggestedQuestions from './SuggestedQuestions'
 import TableOfContents from './TableOfContents'
 import { useToast } from './Toast'
 import { sanitizeTitle } from '../lib/citations'
+import { markdownComponents } from '../lib/markdown'
 import type { Metrics, Source } from '../types'
 
 interface Props {
@@ -50,7 +51,7 @@ export default function ReportView({
   }
 
   return (
-    <div className="flex gap-6 animate-fade-in">
+    <div className="flex min-w-0 gap-6 animate-fade-in">
       <div className="min-w-0 flex-1 space-y-4">
         {Object.keys(metrics).length > 0 && (
           <MetricsBar metrics={metrics} running={running} />
@@ -63,7 +64,7 @@ export default function ReportView({
           </div>
         )}
 
-        <article className="glass relative rounded-2xl p-8">
+        <article className="glass relative min-w-0 rounded-2xl p-4 sm:p-6 lg:p-8">
           <div className="absolute right-3 top-3 flex gap-1 opacity-0 transition group-hover:opacity-100">
             <IconBtn onClick={copySection} title="Copy report">
               <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
@@ -97,7 +98,9 @@ export default function ReportView({
           </div>
 
           <div className="report-md">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{enriched}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+              {enriched}
+            </ReactMarkdown>
             {reportStreaming && (
               <span className="ml-0.5 inline-block h-4 w-1 animate-pulse-soft rounded-sm bg-brand-400 align-middle" />
             )}
@@ -107,13 +110,13 @@ export default function ReportView({
             <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-white/5 pt-3 text-[11px]">
               <button
                 onClick={copySection}
-                className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-slate-400 hover:bg-white/10 hover:text-white"
+                className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-slate-400 hover:bg-white/10 hover:text-white max-lg:min-h-10 max-lg:px-3"
               >
                 Copy report
               </button>
               <button
                 onClick={() => setFocus(true)}
-                className="rounded-md border border-brand-500/30 bg-brand-500/10 px-2.5 py-1 text-brand-200 hover:bg-brand-500/20"
+                className="rounded-md border border-brand-500/30 bg-brand-500/10 px-2.5 py-1 text-brand-200 hover:bg-brand-500/20 max-lg:min-h-10 max-lg:px-3"
               >
                 Focus mode
               </button>
