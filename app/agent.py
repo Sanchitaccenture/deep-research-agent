@@ -514,7 +514,11 @@ def _build_synthesis_prompt(state: ResearchState) -> str:
         f"Template rules:\n{template_prompt}\n\n"
         "Additional rules:\n"
         "- Do not invent facts. If the sources don't cover something, say so.\n"
-        "- Sources tagged (document) are the user's own uploaded material.\n\n"
+        "- Sources tagged (document) are the user's own uploaded material.\n"
+        "- State statistics, percentages and dates exactly as the source words "
+        "them. Do not generalize them (for example do not turn 'developing' into "
+        "'using' or 'adopting'). If a statistic's meaning is unclear, quote the "
+        "figure with the source's own wording.\n\n"
         f"Question: {question}\n\n"
         f"Sources:\n{source_block}"
     )
