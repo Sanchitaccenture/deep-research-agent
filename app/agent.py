@@ -65,7 +65,10 @@ TEMPLATES: Dict[str, str] = {
         "## Cons — bulleted with citations [n]\n"
         "## Nuances — where the answer depends on context\n"
         "## Verdict — one-paragraph judgement grounded in the evidence\n"
-        "## Sources — numbered list of title + URL."
+        "## Sources — numbered list of title + URL.\n"
+        "Rule: every bullet in every section, including Nuances, must end with at "
+        "least one source citation like [3]. If no source supports a point, omit "
+        "that point."
     ),
     "timeline": (
         "Write a chronological analysis:\n"
