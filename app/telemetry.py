@@ -123,6 +123,27 @@ def start_run(question: str, mode: str = "langgraph") -> str:
     return run_id
 
 
+def bind_run(run_id: str, iterator):
+    """Re-attach `run_id` to the context on every step of a sync generator.
+
+    A generator served from a threadpool is resumed in a fresh copy of the
+    request context each time, so a ContextVar set on the first step is lost
+    on later ones. Without this, usage would be attributed to the wrong run.
+    """
+    try:
+        while True:
+            token = _current_run_id.set(run_id)
+            try:
+                item = next(iterator)
+            except StopIteration:
+                return
+            finally:
+                _current_run_id.reset(token)
+            yield item
+    finally:
+        iterator.close()
+
+
 def set_node(node_name: Optional[str]) -> None:
     _current_node.set(node_name)
 
@@ -166,7 +187,10 @@ _usage_lock = threading.Lock()
 
 
 def get_usage(run_id: Optional[str] = None) -> Usage:
-    rid = run_id or _current_run_id.get() or "unattributed"
+    rid = run_id or _current_run_id.get()
+    if rid is None:
+        # No run in scope: never aggregate into a bucket shared across runs.
+        return Usage()
     with _usage_lock:
         u = _run_usage.get(rid)
         if u is None:
@@ -177,7 +201,9 @@ def get_usage(run_id: Optional[str] = None) -> Usage:
 
 def pop_usage(run_id: Optional[str] = None) -> Dict[str, Any]:
     """Retrieve and clear a run's aggregate usage. Call after the run ends."""
-    rid = run_id or _current_run_id.get() or "unattributed"
+    rid = run_id or _current_run_id.get()
+    if rid is None:
+        return Usage().as_dict()
     with _usage_lock:
         u = _run_usage.pop(rid, Usage())
     return u.as_dict()

@@ -21,6 +21,7 @@ import json
 import re
 import time
 from datetime import date
+from urllib.parse import urlsplit
 from typing import Any, Dict, Generator, List, Optional, TypedDict, cast
 
 from langgraph.graph import END, StateGraph
@@ -294,12 +295,26 @@ def plan_node(state: ResearchState) -> Dict[str, Any]:
         "Return ONLY a JSON array of strings, no prose, no markdown.\n\n"
         f"Question: {question}"
     )
+    need = min(2, config.MAX_SUBQUESTIONS)
+    subs: List[str] = []
     try:
-        raw = _content(_llm(temperature=0.3).invoke(prompt)).strip()
-        subs = _parse_json_list(raw) or [question]
+        for attempt in range(2):
+            raw = _content(_llm(temperature=0.3).invoke(prompt)).strip()
+            subs = _parse_json_list(raw)
+            if len(subs) >= need:
+                break
+            telemetry.emit(
+                "plan.invalid", level="warning", attempt=attempt + 1, got=len(subs)
+            )
+            prompt += (
+                "\n\nYour previous answer was not a valid JSON array of at least "
+                f"{need} strings. Reply with ONLY the JSON array."
+            )
     except Exception as exc:  # noqa: BLE001
         # Every model failed. Skip planning and just search the raw question.
         telemetry.emit("plan.llm_failed", level="warning", error=str(exc)[:200])
+        subs = []
+    if len(subs) < need:
         subs = [question]
     subs = subs[: config.MAX_SUBQUESTIONS]
 
@@ -321,6 +336,22 @@ def plan_node(state: ResearchState) -> Dict[str, Any]:
 # --------------------------------------------------------------------------
 # Node 2 - SEARCH (Tavily + optional RAG)
 # --------------------------------------------------------------------------
+def _normalize_url(url: str) -> str:
+    """Dedup key: lowercase host without "www.", no trailing slash, query or fragment."""
+    u = (url or "").strip()
+    if not u:
+        return ""
+    parts = urlsplit(u if "//" in u else "//" + u)
+    host = parts.netloc.lower()
+    if host.startswith("www."):
+        host = host[4:]
+    return f"{host}{parts.path.rstrip('/')}"
+
+
+def _exclude_domains() -> List[str]:
+    return [d.strip() for d in (config.EXCLUDE_DOMAINS or "").split(",") if d.strip()]
+
+
 def search_node(state: ResearchState) -> Dict[str, Any]:
     tavily = _tavily()
     sources = list(state["sources"])
@@ -334,10 +365,15 @@ def search_node(state: ResearchState) -> Dict[str, Any]:
     for q in state["pending_queries"]:
         steps.append(f"Searching web: {q}")
         try:
+            search_kwargs: Dict[str, Any] = {}
+            excluded = _exclude_domains()
+            if excluded:
+                search_kwargs["exclude_domains"] = excluded
             resp = tavily.search(
                 query=q,
                 max_results=config.RESULTS_PER_SEARCH,
                 search_depth="advanced",
+                **search_kwargs,
             )
         except Exception as e:
             steps.append(f"   ! search failed ({e.__class__.__name__}); skipping")
@@ -346,9 +382,11 @@ def search_node(state: ResearchState) -> Dict[str, Any]:
         added = 0
         for r in resp.get("results", []):
             url = r.get("url", "")
-            if url and url in seen:
+            key = _normalize_url(url)
+            if key and key in seen:
                 continue
-            seen.add(url)
+            if key:
+                seen.add(key)
             sources.append({
                 "id": sid,
                 "title": r.get("title", "Untitled"),
@@ -372,9 +410,11 @@ def search_node(state: ResearchState) -> Dict[str, Any]:
             doc_added = 0
             for h in hits:
                 url = h.get("url", "")
-                if url and url in seen:
+                key = _normalize_url(url)
+                if key and key in seen:
                     continue
-                seen.add(url)
+                if key:
+                    seen.add(key)
                 sources.append({
                     "id": sid,
                     "title": h.get("title", "document"),
@@ -530,11 +570,19 @@ def _build_synthesis_prompt(state: ResearchState) -> str:
         "figure with the source's own wording.\n"
         "- Never use placeholders such as '??' or 'TBD'. If a date or number isn't "
         "given, write 'date not stated' or omit the row.\n"
-        "- If the sources look older than six months or may predate a recent "
-        "amendment or decision on this topic, add one short line under the "
-        "Overview: 'Currency note: sources may be outdated; verify recent "
-        "changes.' Never present a future date as settled if sources disagree; "
-        "say they conflict.\n\n"
+        "- Add the line 'Currency note: sources may be outdated; verify recent "
+        "changes.' as one short line under the Overview ONLY for fast-changing "
+        "topics (law and regulation, prices, markets, news, elections, software "
+        "versions, sports) or when the newest source is more than six months "
+        "older than today's date. Do NOT add it for stable explainers or general "
+        "pros/cons.\n"
+        "- Never present a future date as settled if sources disagree; say they "
+        "conflict.\n"
+        "- When sources disagree about a date, prefer the newest source, say "
+        "older ones differ, and never present both as current.\n"
+        "- The Sources section must list every cited number as '[n] Title - URL', "
+        "using exactly the title and URL from the source block. Never name a "
+        "publisher or company unless it appears in the title.\n\n"
         f"Question: {question}\n\n"
         f"Sources:\n{source_block}"
     )
@@ -909,6 +957,21 @@ def run_research(question: str, template: str = DEFAULT_TEMPLATE) -> Dict[str, A
 def stream_research(
     question: str, template: str = DEFAULT_TEMPLATE
 ) -> Generator[Dict[str, Any], None, None]:
+    """Start a run, log it, and stream its updates with the run id bound on every step."""
+    config.validate()
+    run_id = telemetry.start_run(question, mode="langgraph")
+    telemetry.emit(
+        "research.start",
+        run_id=run_id,
+        template=template if template in TEMPLATES else DEFAULT_TEMPLATE,
+        question_length=len(question),
+    )
+    yield from telemetry.bind_run(run_id, _stream_research(run_id, question, template))
+
+
+def _stream_research(
+    run_id: str, question: str, template: str = DEFAULT_TEMPLATE
+) -> Generator[Dict[str, Any], None, None]:
     """Yield SSE-shaped updates:
       - {"steps": [...]}                new step lines
       - {"sources": [...]}              source list snapshot
@@ -916,9 +979,6 @@ def stream_research(
       - {"report": "..."}               final report
       - {"diagram": "..."}, {"followups": [...]}, {"suggested_tags": [...]}, {"metrics": {...}}
     """
-    config.validate()
-    run_id = telemetry.start_run(question, mode="langgraph")
-
     state: Dict[str, Any] = dict(_initial_state(question, template))
 
     # ------- Phase 1: research (plan+search+assess) via LangGraph -------

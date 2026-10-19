@@ -99,7 +99,7 @@ def events(monkeypatch):
 def _run(script, fake_tavily, tavily_result_factory, synth_items):
     fake_tavily({"*": [tavily_result_factory()]})
     script.extend(
-        [json.dumps(["x"]), *synth_items, "mindmap\n  root((t))", json.dumps(["c?"]), json.dumps(["t"])]
+        [json.dumps(["x", "y"]), *synth_items, "mindmap\n  root((t))", json.dumps(["c?"]), json.dumps(["t"])]
     )
     from app.agent import stream_research
 

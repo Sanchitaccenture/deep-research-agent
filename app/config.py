@@ -42,6 +42,7 @@ class Config:
     # --- Research loop budgets ---
     MAX_SUBQUESTIONS: int = int(os.getenv("MAX_SUBQUESTIONS", "4"))
     RESULTS_PER_SEARCH: int = int(os.getenv("RESULTS_PER_SEARCH", "4"))
+    EXCLUDE_DOMAINS: str = os.getenv("EXCLUDE_DOMAINS", "youtube.com,youtu.be")
     MAX_ROUNDS: int = int(os.getenv("MAX_ROUNDS", "3"))
     SYNTH_CONTEXT_CHARS: int = int(os.getenv("SYNTH_CONTEXT_CHARS", "12000"))
     REASONING_EFFORT: str = _reasoning_effort()

@@ -7,7 +7,7 @@ import MetricsBar from './MetricsBar'
 import SuggestedQuestions from './SuggestedQuestions'
 import TableOfContents from './TableOfContents'
 import { useToast } from './Toast'
-import { sanitizeTitle } from '../lib/citations'
+import { enrichCitations } from '../lib/citations'
 import { markdownComponents } from '../lib/markdown'
 import type { Metrics, Source } from '../types'
 
@@ -179,18 +179,6 @@ function IconBtn({
       {children}
     </button>
   )
-}
-
-function enrichCitations(md: string, sources: Source[]): string {
-  if (!md) return md
-  return md.replace(/\[(\d+)\]/g, (match, n) => {
-    const id = parseInt(n, 10)
-    const s = sources.find((x) => x.id === id)
-    if (!s) return match
-    const label = s.source_type === 'document' ? 'D' : ''
-    const url = s.url || '#'
-    return `[${label}${n}](${url} "${sanitizeTitle(s.title)}")`
-  })
 }
 
 function RunningState({

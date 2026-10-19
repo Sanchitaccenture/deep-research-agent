@@ -26,23 +26,15 @@ const empty: StreamState = {
   notes: '',
 }
 
-const MAX_RECONNECT_ATTEMPTS = 3
-
 export function useResearch() {
   const [state, setState] = useState<StreamState>(empty)
   const sourceRef = useRef<EventSource | null>(null)
-  const reconnectAttempts = useRef(0)
   const doneRef = useRef(false)
-  const reconnectTimer = useRef<number | null>(null)
 
   const closeSource = () => {
     if (sourceRef.current) {
       sourceRef.current.close()
       sourceRef.current = null
-    }
-    if (reconnectTimer.current) {
-      window.clearTimeout(reconnectTimer.current)
-      reconnectTimer.current = null
     }
   }
 
@@ -53,7 +45,6 @@ export function useResearch() {
 
   const reset = useCallback(() => {
     stop()
-    reconnectAttempts.current = 0
     doneRef.current = false
     setState(empty)
   }, [stop])
@@ -109,14 +100,6 @@ export function useResearch() {
     const es = new EventSource(url)
     sourceRef.current = es
 
-    es.onopen = () => {
-      // Only celebrate reconnect if we'd tried before.
-      if (reconnectAttempts.current > 0) {
-        setState((s) => ({ ...s, error: undefined }))
-      }
-      reconnectAttempts.current = 0
-    }
-
     es.onmessage = (evt) => {
       try {
         const data = JSON.parse(evt.data)
@@ -143,7 +126,10 @@ export function useResearch() {
             reportStreaming: true,
           }))
         }
-        if (data.report) setState((s) => ({ ...s, report: data.report, reportStreaming: false }))
+        if (data.report) {
+          doneRef.current = true
+          setState((s) => ({ ...s, report: data.report, reportStreaming: false }))
+        }
         if (data.diagram) setState((s) => ({ ...s, diagram: data.diagram }))
         if (data.followups) setState((s) => ({ ...s, followups: data.followups }))
         if (data.suggested_tags) {
@@ -170,42 +156,27 @@ export function useResearch() {
     }
 
     es.onerror = () => {
-      // If the run has finished cleanly, ignore any lingering error events.
+      // Never reconnect: the server has no resume cursor, so a reconnect would
+      // start a second full research run. Close the stream and stop here.
+      closeSource()
       if (doneRef.current) {
-        closeSource()
+        // The report already arrived (or the run finished); ignore the error.
+        setState((s) => ({ ...s, running: false, reportStreaming: false }))
         return
       }
-      // Otherwise attempt reconnection with exponential backoff — but note
-      // that the server has no resume-from-cursor, so a reconnect restarts
-      // the full research. We only auto-retry if we haven't received any
-      // data yet (early transient failure); mid-run drops surface as errors
-      // for the user to decide.
-      if (reconnectAttempts.current >= MAX_RECONNECT_ATTEMPTS) {
-        setState((s) => ({
-          ...s,
-          error:
-            'Connection to the server was lost. Please retry when your connection stabilises.',
-          running: false,
-          reportStreaming: false,
-        }))
-        closeSource()
-        return
-      }
-      reconnectAttempts.current += 1
-      const delay = Math.min(4000, 500 * 2 ** (reconnectAttempts.current - 1))
       setState((s) => ({
         ...s,
-        error: `Reconnecting to research stream (attempt ${reconnectAttempts.current}/${MAX_RECONNECT_ATTEMPTS})…`,
+        error:
+          'Connection to the server was lost. Please run the research again.',
+        running: false,
+        reportStreaming: false,
       }))
-      if (reconnectTimer.current) window.clearTimeout(reconnectTimer.current)
-      reconnectTimer.current = window.setTimeout(() => openStream(url), delay)
     }
   }
 
   const start = useCallback(
     (question: string, mode: ResearchMode, template: ReportTemplate) => {
       stop()
-      reconnectAttempts.current = 0
       doneRef.current = false
       setState({
         ...empty,

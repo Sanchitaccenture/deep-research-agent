@@ -76,7 +76,7 @@ class TestResearchBlocking:
         self, client, fake_llm, fake_tavily, tavily_result_factory
     ):
         fake_llm.extend([
-            json.dumps(["q"]),
+            json.dumps(["q1", "q2"]),
             "## Overview\nBody [1]",
             "mindmap\n  root((x))\n    a",
             json.dumps(["x?"]),
@@ -93,7 +93,7 @@ class TestResearchBlocking:
 class TestSessionsCrud:
     def _seed(self, client, fake_llm, fake_tavily, tavily_result_factory, question="Q"):
         fake_llm.extend([
-            json.dumps(["a"]),
+            json.dumps(["a1", "a2"]),
             "## Overview\nB [1]",
             "mindmap\n  root((t))\n    a",
             json.dumps(["c?"]),
@@ -141,7 +141,7 @@ class TestSearchAndStats:
     def _seed_two(self, client, fake_llm, fake_tavily, tavily_result_factory):
         for q in ["agentic AI", "pizza toppings"]:
             fake_llm.extend([
-                json.dumps(["x"]),
+                json.dumps(["x1", "x2"]),
                 "## Overview\nB [1]",
                 "mindmap\n  root((t))\n    a",
                 json.dumps(["c?"]),
@@ -169,7 +169,7 @@ class TestSearchAndStats:
 class TestChat:
     def _seed(self, client, fake_llm, fake_tavily, tavily_result_factory):
         fake_llm.extend([
-            json.dumps(["x"]),
+            json.dumps(["x1", "x2"]),
             "## Overview\nB [1]",
             "mindmap\n  root((t))\n    a",
             json.dumps(["c?"]),

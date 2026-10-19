@@ -5,7 +5,7 @@ import MicButton from './MicButton'
 import { useToast } from './Toast'
 import { useChat } from '../hooks/useChat'
 import { useRevealOnMobile } from '../hooks/useRevealOnMobile'
-import { sanitizeTitle } from '../lib/citations'
+import { enrichCitations } from '../lib/citations'
 import { markdownComponents } from '../lib/markdown'
 import type { ChatTurn, Source } from '../types'
 
@@ -167,7 +167,7 @@ function MessageBubble({
   live?: boolean
 }) {
   const isUser = turn.role === 'user'
-  const enriched = isUser ? turn.content : enrichCitations(turn.content, sources)
+  const enriched = isUser ? turn.content : enrichCitations(turn.content, sources, false)
 
   return (
     <div
@@ -198,17 +198,6 @@ function MessageBubble({
       </div>
     </div>
   )
-}
-
-function enrichCitations(md: string, sources: Source[]): string {
-  if (!md) return md
-  return md.replace(/\[(\d+)\]/g, (match, n) => {
-    const id = parseInt(n, 10)
-    const s = sources.find((x) => x.id === id)
-    if (!s) return match
-    const url = s.url || '#'
-    return `[${n}](${url} "${sanitizeTitle(s.title)}")`
-  })
 }
 
 function EmptyState({
