@@ -16,7 +16,7 @@ interface Props {
   question: string
   template: ReportTemplate
   onTemplateChange: (t: ReportTemplate) => void
-  onSubmit: (q: string) => void
+  onSubmit: (q: string, opts?: { force?: boolean }) => void
   onStop: () => void
   onReset: () => void
   onOpenSession: (id: string) => void
@@ -44,7 +44,7 @@ export default function ResearchStage({
   const submit = (e?: React.FormEvent) => {
     e?.preventDefault()
     const t = q.trim()
-    if (t) onSubmit(t)
+    if (t) onSubmit(t, { force: true })
   }
 
   const exportReport = () => {
@@ -284,7 +284,7 @@ export default function ResearchStage({
               steps={state.steps}
               onPickFollowup={(q) => {
                 setQ(q)
-                onSubmit(q)
+                onSubmit(q, { force: true })
               }}
             />
             {!state.running && state.report && (

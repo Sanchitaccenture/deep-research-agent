@@ -80,9 +80,9 @@ export default function App() {
     }
   }, [research.state.running, research.state.report, research.state.sessionId, refreshMeta])
 
-  const onSubmit = (q: string) => {
+  const onSubmit = (q: string, opts?: { force?: boolean }) => {
     setQuestion(q)
-    research.start(q, 'langgraph', template)
+    research.start(q, 'langgraph', template, opts)
     setView('stage')
   }
 
