@@ -109,7 +109,7 @@ export default function QueryAutocomplete({ value, sessions, onPick, children }:
       {children(handlers)}
 
       {open && items.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-xl border border-white/10 bg-surface-900/95 shadow-2xl shadow-black/50 backdrop-blur animate-slide-up">
+        <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-xl border border-white/10 bg-surface-900 shadow-2xl shadow-black/50 backdrop-blur animate-slide-up">
           {items.map((it, i) => (
             <button
               key={it.id}

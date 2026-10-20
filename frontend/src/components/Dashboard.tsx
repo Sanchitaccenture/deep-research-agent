@@ -3,6 +3,7 @@ import MicButton from './MicButton'
 import QueryAutocomplete from './QueryAutocomplete'
 import TemplateSelector from './TemplateSelector'
 import { api } from '../lib/api'
+import { shouldSubmitOnEnter } from '../lib/keys'
 import { TEMPLATE_META, type ReportTemplate, type SessionSummary, type SessionsStats } from '../types'
 
 interface Props {
@@ -50,7 +51,7 @@ export default function Dashboard({
   return (
     <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-6 px-3 py-6 sm:px-6 sm:py-8">
       {/* Ask row */}
-      <section className="animate-fade-in">
+      <section className="relative z-20 animate-fade-in">
         <div className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-500">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-soft" />
           Ready to research · press <kbd className="rounded bg-white/10 px-1 py-0.5 text-slate-300">⌘K</kbd> for the command palette
@@ -74,10 +75,13 @@ export default function Dashboard({
                     onBlur={onBlur}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit()
-                      else onKeyDown(e)
+                      else if (shouldSubmitOnEnter(e)) {
+                        e.preventDefault()
+                        submit()
+                      } else if (e.key !== 'Enter') onKeyDown(e)
                     }}
                     rows={2}
-                    placeholder="What do you want researched?  (Cmd/Ctrl+Enter · Tab to autocomplete · 🎙 to speak)"
+                    placeholder="What do you want researched? (Enter to run · Shift+Enter for a new line · Tab to autocomplete · 🎙 to speak)"
                     className="flex-1 resize-none bg-transparent px-3 py-2 text-base text-white placeholder-slate-500 focus:outline-none"
                   />
                   <MicButton

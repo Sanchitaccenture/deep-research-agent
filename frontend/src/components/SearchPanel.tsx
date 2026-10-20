@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import MicButton from './MicButton'
 import TemplateSelector from './TemplateSelector'
+import { shouldSubmitOnEnter } from '../lib/keys'
 import type { ReportTemplate } from '../types'
 
 interface Props {
@@ -58,9 +59,13 @@ export default function SearchPanel({
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit()
+                else if (shouldSubmitOnEnter(e)) {
+                  e.preventDefault()
+                  submit()
+                }
               }}
               rows={3}
-              placeholder="What do you want researched?  (Cmd/Ctrl+Enter to run · click 🎙 to speak)"
+              placeholder="What do you want researched? (Enter to run · Shift+Enter for a new line · 🎙 to speak)"
               className="flex-1 resize-none bg-transparent px-3 py-2 text-base text-white placeholder-slate-500 focus:outline-none"
             />
             <MicButton

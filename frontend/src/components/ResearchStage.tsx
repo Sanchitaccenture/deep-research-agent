@@ -10,6 +10,7 @@ import StepsPanel from './StepsPanel'
 import SuggestedTags from './SuggestedTags'
 import TemplateSelector from './TemplateSelector'
 import { useToast } from './Toast'
+import { shouldSubmitOnEnter } from '../lib/keys'
 import type { ReportTemplate, StreamState } from '../types'
 
 interface Props {
@@ -109,6 +110,10 @@ export default function ResearchStage({
             placeholder="Refine or ask a new question…"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit()
+              else if (shouldSubmitOnEnter(e)) {
+                e.preventDefault()
+                submit()
+              }
             }}
           />
           <MicButton
