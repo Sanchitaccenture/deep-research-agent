@@ -53,7 +53,7 @@ show the streaming answer with inline citations)*
 
 ### 1:05 – 1:20 — Show the engineering
 > "Backend is FastAPI + LangGraph + Groq. Frontend is React with SSE
-> streaming. Everything is tested — 55 pytest cases run in three seconds
+> streaming. Everything is tested — 100+ pytest cases run in a few seconds
 > — and I built an LLM-as-judge evals harness to catch quality regressions."
 
 *(action: quickly show README badges, then the pytest green output

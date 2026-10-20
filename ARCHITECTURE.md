@@ -134,8 +134,8 @@ the streaming code obvious.
 ### Why Groq for LLM
 - Latency: streaming synthesis feels immediate at ~250 tok/s.
 - Cheap enough that eval runs cost cents, not dollars.
-- Compound-mini is small enough for planning/critique; Llama-3.3-70B
-  falls back for the harder synthesis.
+- `openai/gpt-oss-20b` is small enough for planning/critique; `openai/gpt-oss-120b`
+  and `qwen/qwen3.8-27b` are fallbacks in `GROQ_MODEL_CHAIN` when it is rate-limited.
 
 ### Why SSE (not WebSockets)
 - One-way stream, server -> browser, fits the model perfectly.
@@ -241,7 +241,7 @@ judge on five 0-5 rubrics (coverage / citations / groundedness /
 clarity / honesty). See [evals/README.md](evals/README.md).
 
 Cheap enough to run in CI on a merge to `main` (a few cents per full
-sweep with Compound-mini).
+sweep with gpt-oss-20b).
 
 ---
 

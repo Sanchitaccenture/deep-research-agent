@@ -12,7 +12,7 @@
 [![React 18](https://img.shields.io/badge/react-18-61dafb?style=flat&logo=react&logoColor=white)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178c6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![tests: 55 passing](https://img.shields.io/badge/tests-55%20passing-brightgreen?style=flat)](tests/)
+[![tests: 100+ passing](https://img.shields.io/badge/tests-100%2B%20passing-brightgreen?style=flat)](tests/)
 
 <br>
 
@@ -58,8 +58,6 @@ It behaves like a junior analyst you can ask any question at 2am.
 The dashboard, ⌘K command palette, streaming synthesis, mind map, and follow-up chat:
 
 **[▶ Open the live demo](https://deep-research-agent-henna.vercel.app)** &nbsp;·&nbsp; Try the sample questions on the home screen for a quick feel.
-
-> Screenshots and a 90-second Loom walkthrough will be added here in the next commit.
 
 ---
 
@@ -123,7 +121,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for full design decisions, sequence diagr
 - **Bookmarks + hashtags + autosaving notes** on every session
 - **Toast notifications** for every action
 - **Shareable URLs** — `#/session/<id>` deep-links back to any run
-- **Error boundary** + **SSE reconnect** with exponential backoff
+- **Error boundary**; a dropped stream stops cleanly and never starts a second run
 
 </td>
 </tr>
@@ -132,7 +130,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for full design decisions, sequence diagr
 
 ### 🛠️ Engineering rigour
 
-- **55 pytest cases** — mocked LLM + Tavily, isolated per-test data dirs, runs offline in <5s
+- **100+ pytest cases** — mocked LLM + Tavily, isolated per-test data dirs, runs offline in <5s
 - **LLM-as-judge evals** — scores every report on 5 rubrics (coverage / citations / groundedness / clarity / honesty)
 - **Structured telemetry** — every LLM call captured via LangChain callback, JSONL logs to `data/telemetry/YYYY-MM-DD.jsonl`
 - **Real token + USD cost tracking** — surfaced in the metrics tile per run
@@ -249,7 +247,7 @@ Open <http://localhost:5173>.
 ## 🧪 Testing & evaluation
 
 ```powershell
-# 55 unit + API tests — offline, mocks LLM + Tavily, ~3 seconds
+# 100+ unit + API tests — offline, mocks LLM + Tavily, ~3 seconds
 python -m pytest
 
 # End-to-end quality evals — real APIs, ~5-10¢ per full sweep
@@ -260,7 +258,7 @@ python -m evals.run_eval --ids rag-basics,mcp-security
 Every run also emits a structured telemetry line to `data/telemetry/YYYY-MM-DD.jsonl`:
 
 ```json
-{"ts":"2026-09-17T...","event":"llm.call","run_id":"a1b2...","node":"synthesize","model":"groq/compound-mini","input_tokens":1240,"output_tokens":812,"cost_usd":0.000368}
+{"ts":"2026-09-17T...","event":"llm.call","run_id":"a1b2...","node":"synthesize","model":"openai/gpt-oss-20b","input_tokens":1240,"output_tokens":812,"cost_usd":0.000368}
 ```
 
 Grep-friendly, no external observability service required. See [evals/README.md](evals/README.md) for the rubric definitions.
@@ -281,6 +279,10 @@ Step-by-step guide with env vars and rollback: **[DEPLOY.md](DEPLOY.md)**
 ### Hosted demo limitations
 
 The hosted demo runs without **document upload (RAG)** and **Crew mode** because of Vercel's 500 MB function limit. **Session history is best-effort** because Vercel storage is temporary. The full feature set runs with Docker.
+
+- **Not a news tool:** software comparisons, "best/top in a given year" questions and legal topics can be out of date or wrong. Nothing here is legal advice.
+- **Figures can vary between runs.**
+- **Follow-up chat is stateless on Vercel:** the browser sends the report, sources and chat history with each message, and chat turns are not saved on the server.
 
 ---
 
@@ -310,7 +312,7 @@ deep-research-agent/
 │       ├── hooks/       # useResearch, useChat, useHotkeys, useVoice
 │       ├── lib/api.ts   # Typed API client
 │       └── types.ts
-├── tests/               # 55 pytest cases: nodes, session store, FastAPI routes
+├── tests/               # 100+ pytest cases: nodes, session store, FastAPI routes
 ├── evals/               # LLM-as-judge harness + questions.yaml
 ├── .github/workflows/   # CI: pytest matrix + frontend build
 ├── ARCHITECTURE.md      # Design decisions, sequence diagrams, trade-offs
@@ -341,11 +343,14 @@ Everything is env-driven — no code changes to tune.
 | `CREW_MODEL` | `openai/gpt-oss-120b` | Model for Crew mode |
 | `MAX_SUBQUESTIONS` | `4` | Sub-questions per plan |
 | `RESULTS_PER_SEARCH` | `4` | Tavily results per query |
+| `EXCLUDE_DOMAINS` | `youtube.com,youtu.be` | Comma-separated domains excluded from Tavily web searches (empty = none) |
 | `MAX_ROUNDS` | `3` | Hard cap on the assess/search loop |
+| `SYNTH_CONTEXT_CHARS` | `12000` | Total characters of source text sent to the synthesis prompt, split evenly across sources |
+| `REASONING_EFFORT` | `low` | Reasoning effort for `openai/gpt-oss-*` models (`low`, `medium`, `high`; empty = provider default) |
 | `RAG_TOP_K` | `4` | Doc chunks retrieved per query |
 | `EMBEDDING_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` | Runs locally, no key needed |
-| `ENABLE_RAG` | `true` | Toggle document search |
-| `ENABLE_CREW` | `true` | Toggle multi-agent crew mode |
+| `ENABLE_RAG` | `true` (`false` on Vercel) | Toggle document search |
+| `ENABLE_CREW` | `true` (`false` on Vercel) | Toggle multi-agent crew mode |
 | `ALLOWED_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | CORS allowlist |
 | `RATE_LIMIT_PER_MINUTE` | `30` | Set to `0` to disable |
 | `RESEARCH_CACHE_TTL_SECONDS` | `900` | Cache for identical questions |
@@ -362,7 +367,7 @@ See [.env.example](.env.example) for the full list.
 - [ ] LangSmith trace integration (optional, feature-flagged)
 - [ ] Streaming from more providers (OpenAI, Anthropic) with `LiteLLM`
 - [ ] Postgres session store option (for horizontal scale)
-- [ ] Native mobile responsive layout (currently desktop-first)
+- [x] Mobile-responsive layout
 
 ---
 
