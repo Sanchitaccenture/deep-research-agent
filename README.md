@@ -361,7 +361,6 @@ See [.env.example](.env.example) for the full list.
 
 ## 🗺️ Roadmap
 
-- [ ] 90-second Loom demo linked at the top of the README
 - [ ] Screenshot gallery
 - [ ] Auth (bearer token) so it's safe to leave live long-term
 - [ ] LangSmith trace integration (optional, feature-flagged)
