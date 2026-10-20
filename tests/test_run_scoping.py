@@ -287,7 +287,7 @@ class TestCurrencyNote:
         assert lines[i - 1] == "" and lines[i - 2] == "Still the first paragraph."
         assert lines[i + 1] == "" and lines[i + 2] == "## Findings"
 
-    def test_note_added_with_three_sources_and_no_recent_year_anywhere(self, fake_llm):
+    def test_stable_question_never_gets_note_even_without_any_year(self, fake_llm):
         from app.agent import _initial_state, synthesize_node
 
         fake_llm.append(self.REPORT)
@@ -300,32 +300,7 @@ class TestCurrencyNote:
             ],
             "round": 1,
         }
-        assert NOTE in synthesize_node(state)["report"]
-
-    def test_year_in_a_source_url_or_title_counts_as_recent(self, fake_llm):
-        from app.agent import _needs_currency_note
-
-        def src(i, title="T", url="https://x.test/p"):
-            return {"id": i, "title": title, "url": url, "content": "no year here"}
-
-        plain = [src(1), src(2), src(3)]
-        assert _needs_currency_note("How does photosynthesis work?", plain)
-
-        in_url = [src(1), src(2, url=f"https://x.test/{THIS_YEAR}/post"), src(3)]
-        assert not _needs_currency_note("How does photosynthesis work?", in_url)
-
-        in_title = [src(1), src(2), src(3, title=f"Guide ({THIS_YEAR} edition)")]
-        assert not _needs_currency_note("How does photosynthesis work?", in_title)
-
-    def test_fewer_than_three_sources_never_trigger_the_year_rule(self):
-        from app.agent import _needs_currency_note
-
-        two = [
-            {"id": 1, "title": "T", "url": "https://x.test/1", "content": "2019"},
-            {"id": 2, "title": "T", "url": "https://x.test/2", "content": "2018"},
-        ]
-        assert not _needs_currency_note("How does photosynthesis work?", two)
-        assert _needs_currency_note("Latest GPU prices?", two)  # keyword rule unchanged
+        assert "Currency note" not in synthesize_node(state)["report"]
 
     def test_model_written_note_is_stripped(self, fake_llm):
         from app.agent import synthesize_node
@@ -341,10 +316,10 @@ class TestCurrencyNote:
     def test_keywords_match_whole_words_only(self):
         from app.agent import _needs_currency_note
 
-        fresh = [{"content": f"{THIS_YEAR}"}]
-        assert not _needs_currency_note("How do I practice piano in an urban flat?", fresh)
-        assert _needs_currency_note("What are the latest GPU prices?", fresh)
-        assert _needs_currency_note("Did the ban pass this week?", fresh)
+        assert not _needs_currency_note("How do I practice piano in an urban flat?")
+        assert not _needs_currency_note("How does photosynthesis work?")
+        assert _needs_currency_note("What are the latest GPU prices?")
+        assert _needs_currency_note("Did the ban pass this week?")
 
     def test_streaming_path_applies_the_note_too(
         self, fake_llm, fake_tavily, tavily_result_factory
@@ -361,3 +336,117 @@ class TestCurrencyNote:
 
         assert NOTE in run("What is the latest on the EU AI Act?")
         assert "Currency note" not in run("How does photosynthesis work?")
+
+
+# ------------------------------------------------- citation brackets + prompt
+class TestCitationBrackets:
+    def test_normalizes_fullwidth_brackets_only_around_numbers(self):
+        from app.agent import _normalize_citation_brackets
+
+        assert (
+            _normalize_citation_brackets("a\u30101\u3011 b\uff3b2\uff3d c\u30143\u3015 \u3010note\u3011")
+            == "a[1] b[2] c[3] \u3010note\u3011"
+        )
+
+    def test_blocking_synthesis_returns_ascii_brackets(self, fake_llm):
+        from app.agent import synthesize_node
+
+        fake_llm.append("## Overview\nClaim \u30101\u3011 and \uff3b2\uff3d, also \u30143\u3015.")
+        out = synthesize_node(_synth_state("How does photosynthesis work?", "x"))
+        assert "[1] and [2], also [3]." in out["report"]
+        assert "\u3010" not in out["report"]
+
+    def test_streaming_report_event_returns_ascii_brackets(
+        self, fake_llm, fake_tavily, tavily_result_factory
+    ):
+        from app.agent import stream_research
+
+        fake_tavily({"*": [tavily_result_factory()]})
+        fake_llm.extend([
+            json.dumps(["a", "b"]), "## Overview\nClaim \u30101\u3011.", "mindmap\n  root((t))",
+            json.dumps(["c?"]), json.dumps(["t"]),
+        ])
+        report = [u["report"] for u in stream_research("How does photosynthesis work?") if "report" in u][-1]
+        assert "Claim [1]." in report
+
+
+class TestPromptRulesRound3:
+    def _prompt(self):
+        from app.agent import _build_synthesis_prompt, _initial_state
+
+        state = {
+            **_initial_state("Q", "default"),
+            "sources": [{"id": 1, "title": "T", "url": "https://x.test", "content": "c"}],
+        }
+        return _build_synthesis_prompt(state)
+
+    def test_ascii_bracket_and_parenthesis_rules(self):
+        p = self._prompt()
+        assert "ASCII square brackets" in p
+        assert "Never put your own reasoning or inferences in parentheses" in p
+
+    def test_missing_dates_mean_omit_the_row(self):
+        p = self._prompt()
+        assert "omit the row" in p
+        assert "date not stated" not in p
+
+
+# ------------------------------------------------ duplicate-run diagnostic
+@pytest.fixture
+def client():
+    from fastapi.testclient import TestClient
+
+    from app.api import app
+
+    return TestClient(app)
+
+
+class TestResearchStartDiagnostics:
+    def test_rid_and_request_headers_are_logged(
+        self, client, monkeypatch, fake_llm, fake_tavily, tavily_result_factory
+    ):
+        from app import telemetry
+
+        fake_tavily({"*": [tavily_result_factory()]})
+        fake_llm.extend([
+            json.dumps(["a", "b"]), "## Overview\nBody [1]", "mindmap\n  root((t))",
+            json.dumps(["c?"]), json.dumps(["t"]),
+        ])
+        seen: list = []
+        real_emit = telemetry.emit
+
+        def _emit(event, **kw):
+            seen.append((event, kw))
+            return real_emit(event, **kw)
+
+        monkeypatch.setattr(telemetry, "emit", _emit)
+        r = client.get(
+            "/api/research/stream",
+            params={"question": "What is RAG?", "rid": "rid-123", "save": "false"},
+            headers={
+                "User-Agent": "TestAgent/1.0",
+                "Referer": "https://app.test/page",
+                "X-Forwarded-For": "203.0.113.9",
+            },
+        )
+        assert r.status_code == 200
+        starts = [kw for e, kw in seen if e == "research.start"]
+        assert len(starts) == 1
+        assert starts[0]["rid"] == "rid-123"
+        assert starts[0]["user_agent"] == "TestAgent/1.0"
+        assert starts[0]["referer"] == "https://app.test/page"
+        assert starts[0]["x_forwarded_for"] == "203.0.113.9"
+
+    def test_rid_is_optional(self, client, monkeypatch, fake_llm, fake_tavily, tavily_result_factory):
+        from app import telemetry
+
+        fake_tavily({"*": [tavily_result_factory()]})
+        fake_llm.extend([json.dumps(["a", "b"]), "## Overview\nBody", "mindmap\n  root((t))", "[]", "[]"])
+        seen: list = []
+        real_emit = telemetry.emit
+        monkeypatch.setattr(
+            telemetry, "emit", lambda event, **kw: (seen.append((event, kw)), real_emit(event, **kw))[1]
+        )
+        assert client.get("/api/research/stream", params={"question": "Q", "save": "false"}).status_code == 200
+        starts = [kw for e, kw in seen if e == "research.start"]
+        assert len(starts) == 1 and starts[0]["rid"] is None

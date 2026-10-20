@@ -308,11 +308,18 @@ def research(req: ResearchRequest) -> dict:
 
 @app.get("/api/research/stream")
 def research_stream(
+    request: Request,
     question: str,
     template: str = DEFAULT_TEMPLATE,
     save: bool = True,
+    rid: Optional[str] = None,
 ) -> StreamingResponse:
     tpl = _resolve_template(template)
+    client = {
+        "user_agent": request.headers.get("user-agent", "")[:300],
+        "referer": request.headers.get("referer", "")[:300],
+        "x_forwarded_for": request.headers.get("x-forwarded-for", "")[:300],
+    }
 
     def event_generator():
         collected_sources: List[Dict[str, Any]] = []
@@ -323,7 +330,7 @@ def research_stream(
         suggested_tags: List[str] = []
         metrics: Dict[str, Any] = {}
         try:
-            for update in stream_research(question, tpl):
+            for update in stream_research(question, tpl, rid=(rid or "")[:64] or None, client=client):
                 if update.get("error"):
                     yield f"data: {json.dumps({'error': update['error']})}\n\n"
                     continue

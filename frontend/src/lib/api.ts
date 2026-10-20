@@ -79,11 +79,16 @@ export const api = {
       json<{ ok: boolean }>(r),
     ),
 
-  streamUrl: (question: string, mode: ResearchMode, template: ReportTemplate) => {
+  streamUrl: (
+    question: string,
+    mode: ResearchMode,
+    template: ReportTemplate,
+    rid: string,
+  ) => {
     if (mode === 'crew') {
-      return `${API}/crew/stream?question=${encodeURIComponent(question)}&save=true`
+      return `${API}/crew/stream?question=${encodeURIComponent(question)}&save=true&rid=${encodeURIComponent(rid)}`
     }
-    return `${API}/research/stream?question=${encodeURIComponent(question)}&template=${encodeURIComponent(template)}&save=true`
+    return `${API}/research/stream?question=${encodeURIComponent(question)}&template=${encodeURIComponent(template)}&save=true&rid=${encodeURIComponent(rid)}`
   },
 
   chatStreamUrl: (sessionId: string, message: string) =>

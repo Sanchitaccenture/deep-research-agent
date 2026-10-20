@@ -223,7 +223,8 @@ export function useResearch() {
         mode,
       })
 
-      const url = api.streamUrl(question, mode, template)
+      const rid = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)
+      const url = api.streamUrl(question, mode, template, rid)
       openStream(url)
     },
     [stop],

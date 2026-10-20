@@ -569,7 +569,11 @@ def _build_synthesis_prompt(state: ResearchState) -> str:
         "'using' or 'adopting'). If a statistic's meaning is unclear, quote the "
         "figure with the source's own wording.\n"
         "- Never use placeholders such as '??' or 'TBD'. If a date or number isn't "
-        "given, write 'date not stated' or omit the row.\n"
+        "given in a source, omit the row.\n"
+        "- Never put your own reasoning or inferences in parentheses inside the "
+        "report.\n"
+        "- Cite sources only as [n] using ASCII square brackets (never \u3010n\u3011, "
+        "\uff3bn\uff3d or any other bracket style).\n"
         "- Never present a future date as settled if sources disagree; say they "
         "conflict.\n"
         "- When sources disagree about a date, prefer the newest source, say "
@@ -592,31 +596,32 @@ _FAST_CHANGING_RE = re.compile(
     r"\b(?:" + "|".join(re.escape(k) for k in FAST_CHANGING_KEYWORDS) + r")(?:s|es)?\b",
     re.IGNORECASE,
 )
-MIN_SOURCES_FOR_YEAR_CHECK = 3
 _NOTE_LINE_RE = re.compile(r"\s*[*_>]*\s*Currency note:", re.IGNORECASE)
 
 
-def _needs_currency_note(question: str, sources: List[Dict[str, Any]]) -> bool:
-    if _FAST_CHANGING_RE.search(question or ""):
-        return True
-    if len(sources) < MIN_SOURCES_FOR_YEAR_CHECK:
-        return False
-    this_year = date.today().year
-    recent = re.compile(rf"\b({this_year}|{this_year - 1})\b")
-    return not any(
-        recent.search(
-            f"{s.get('content') or ''} {s.get('title') or ''} {s.get('url') or ''}"
-        )
-        for s in sources
+def _needs_currency_note(question: str) -> bool:
+    return bool(_FAST_CHANGING_RE.search(question or ""))
+
+
+_FULLWIDTH_CITATION_RE = re.compile(r"\u3010(\d+)\u3011|\uff3b(\d+)\uff3d|\u3014(\d+)\u3015")
+
+
+def _normalize_citation_brackets(text: str) -> str:
+    """Turn \u3010n\u3011, \uff3bn\uff3d and \u3014n\u3015 into [n]."""
+    return _FULLWIDTH_CITATION_RE.sub(
+        lambda m: f"[{m.group(1) or m.group(2) or m.group(3)}]", text
     )
 
 
-def _apply_currency_note(report: str, question: str, sources: List[Dict[str, Any]]) -> str:
+def _finalize_report(report: str, question: str) -> str:
+    return _apply_currency_note(_normalize_citation_brackets(report), question)
+
+
+def _apply_currency_note(report: str, question: str) -> str:
     """Strip any model-written currency note, then add ours deterministically
-    right under the first paragraph when the topic is fast-changing or the
-    sources show no recent year."""
+    right under the first paragraph when the question is about a fast-changing topic."""
     lines = [ln for ln in report.split("\n") if not _NOTE_LINE_RE.match(ln)]
-    if not _needs_currency_note(question, sources):
+    if not _needs_currency_note(question):
         return "\n".join(lines).strip()
     i = 0
     while i < len(lines) and (not lines[i].strip() or lines[i].lstrip().startswith("#")):
@@ -696,7 +701,7 @@ def synthesize_node(state: ResearchState) -> Dict[str, Any]:
             telemetry.emit("llm.continuation_failed", level="warning", error=str(exc)[:200])
             report += CUT_OFF_NOTE
             steps.append("Report was cut off and could not be continued.")
-    report = _apply_currency_note(report, state["question"], sources)
+    report = _finalize_report(report, state["question"])
     steps.append(
         f"Synthesized {len(report)} chars from {len(sources)} sources "
         f"over {state['round']} round(s)."
@@ -997,7 +1002,10 @@ def run_research(question: str, template: str = DEFAULT_TEMPLATE) -> Dict[str, A
 
 
 def stream_research(
-    question: str, template: str = DEFAULT_TEMPLATE
+    question: str,
+    template: str = DEFAULT_TEMPLATE,
+    rid: Optional[str] = None,
+    client: Optional[Dict[str, str]] = None,
 ) -> Generator[Dict[str, Any], None, None]:
     """Start a run, log it, and stream its updates with the run id bound on every step."""
     config.validate()
@@ -1007,6 +1015,8 @@ def stream_research(
         run_id=run_id,
         template=template if template in TEMPLATES else DEFAULT_TEMPLATE,
         question_length=len(question),
+        rid=rid,
+        **(client or {}),
     )
     yield from telemetry.bind_run(run_id, _stream_research(run_id, question, template))
 
@@ -1111,7 +1121,7 @@ def _stream_research(
                 parts.append(CUT_OFF_NOTE)
                 yield {"report_delta": CUT_OFF_NOTE}
                 yield {"steps": ["Report was cut off and could not be continued."]}
-        report = _apply_currency_note("".join(parts).strip(), question, sources)
+        report = _finalize_report("".join(parts).strip(), question)
         state["report"] = report
         yield {
             "steps": [

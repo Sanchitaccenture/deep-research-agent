@@ -17,6 +17,10 @@ export function enrichCitations(
   docLabels = true,
 ): string {
   if (!md) return md
+  md = md.replace(
+    /【(\d+)】|［(\d+)］|〔(\d+)〕/g,
+    (_m, a, b, c) => `[${a ?? b ?? c}]`,
+  )
   const spaced = md.replace(/(\[\d+\])(?=\[\d+\])/g, '$1, ')
   return spaced.replace(/\[(\d+)\]/g, (match, n) => {
     const id = parseInt(n, 10)
