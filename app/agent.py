@@ -592,15 +592,23 @@ _FAST_CHANGING_RE = re.compile(
     r"\b(?:" + "|".join(re.escape(k) for k in FAST_CHANGING_KEYWORDS) + r")(?:s|es)?\b",
     re.IGNORECASE,
 )
+MIN_SOURCES_FOR_YEAR_CHECK = 3
 _NOTE_LINE_RE = re.compile(r"\s*[*_>]*\s*Currency note:", re.IGNORECASE)
 
 
 def _needs_currency_note(question: str, sources: List[Dict[str, Any]]) -> bool:
     if _FAST_CHANGING_RE.search(question or ""):
         return True
+    if len(sources) < MIN_SOURCES_FOR_YEAR_CHECK:
+        return False
     this_year = date.today().year
     recent = re.compile(rf"\b({this_year}|{this_year - 1})\b")
-    return not any(recent.search(str(s.get("content") or "")) for s in sources)
+    return not any(
+        recent.search(
+            f"{s.get('content') or ''} {s.get('title') or ''} {s.get('url') or ''}"
+        )
+        for s in sources
+    )
 
 
 def _apply_currency_note(report: str, question: str, sources: List[Dict[str, Any]]) -> str:

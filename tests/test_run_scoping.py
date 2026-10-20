@@ -287,14 +287,45 @@ class TestCurrencyNote:
         assert lines[i - 1] == "" and lines[i - 2] == "Still the first paragraph."
         assert lines[i + 1] == "" and lines[i + 2] == "## Findings"
 
-    def test_note_added_when_no_source_mentions_a_recent_year(self, fake_llm):
-        from app.agent import synthesize_node
+    def test_note_added_with_three_sources_and_no_recent_year_anywhere(self, fake_llm):
+        from app.agent import _initial_state, synthesize_node
 
         fake_llm.append(self.REPORT)
-        out = synthesize_node(
-            _synth_state("How does photosynthesis work?", "Published in 2019.")
-        )
-        assert NOTE in out["report"]
+        state = {
+            **_initial_state("How does photosynthesis work?", "default"),
+            "sources": [
+                {"id": i, "title": f"Guide {i}", "url": f"https://x.test/p{i}",
+                 "content": "Published in 2019."}
+                for i in (1, 2, 3)
+            ],
+            "round": 1,
+        }
+        assert NOTE in synthesize_node(state)["report"]
+
+    def test_year_in_a_source_url_or_title_counts_as_recent(self, fake_llm):
+        from app.agent import _needs_currency_note
+
+        def src(i, title="T", url="https://x.test/p"):
+            return {"id": i, "title": title, "url": url, "content": "no year here"}
+
+        plain = [src(1), src(2), src(3)]
+        assert _needs_currency_note("How does photosynthesis work?", plain)
+
+        in_url = [src(1), src(2, url=f"https://x.test/{THIS_YEAR}/post"), src(3)]
+        assert not _needs_currency_note("How does photosynthesis work?", in_url)
+
+        in_title = [src(1), src(2), src(3, title=f"Guide ({THIS_YEAR} edition)")]
+        assert not _needs_currency_note("How does photosynthesis work?", in_title)
+
+    def test_fewer_than_three_sources_never_trigger_the_year_rule(self):
+        from app.agent import _needs_currency_note
+
+        two = [
+            {"id": 1, "title": "T", "url": "https://x.test/1", "content": "2019"},
+            {"id": 2, "title": "T", "url": "https://x.test/2", "content": "2018"},
+        ]
+        assert not _needs_currency_note("How does photosynthesis work?", two)
+        assert _needs_currency_note("Latest GPU prices?", two)  # keyword rule unchanged
 
     def test_model_written_note_is_stripped(self, fake_llm):
         from app.agent import synthesize_node
